@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Indicadores</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #F0F2F5; --surface: #FFFFFF; --surface2: #F7F8FA;
+    --border: #E4E7EC; --text: #111827; --text2: #6B7280; --text3: #9CA3AF;
+    --green: #16A34A; --green-bg: #DCFCE7;
+    --yellow: #CA8A04; --yellow-bg: #FEF9C3;
+    --red: #DC2626; --red-bg: #FEE2E2;
+    --blue: #2563EB; --blue-bg: #DBEAFE;
+    --con: #D97706; --con-bg: #FEF3C7;
+    --pla: #059669; --pla-bg: #D1FAE5;
+    --pry: #7C3AED; --pry-bg: #EDE9FE;
+    --cyl: #0891B2; --cyl-bg: #CFFAFE;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header { background: var(--text); color: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 32px; height: 32px; background: var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+  .header-title { font-size: 15px; font-weight: 600; }
+  .header-sub { font-size: 12px; color: #9CA3AF; margin-top: 1px; }
+  .periodo-badge { background: #1F2937; border: 1px solid #374151; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #E5E7EB; }
+  .refresh-btn { background: #374151; border: none; color: #E5E7EB; padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .refresh-btn:hover { background: #4B5563; }
+
+  .nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; gap: 0; }
+  .nav-tab { padding: 14px 20px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  .main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+  .page { display: none; } .page.active { display: block; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 12px; }
+
+  /* LOADING */
+  .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text2); }
+
+  /* ERROR */
+  .error-banner { background: #FEE2E2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--red); display: none; }
+
+  /* AREA HEADER */
+  .area-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .area-title { font-size: 20px; font-weight: 700; }
+  .area-badge { font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+  .badge-con { background: var(--con-bg); color: var(--con); }
+  .badge-pla { background: var(--pla-bg); color: var(--pla); }
+  .badge-pry { background: var(--pry-bg); color: var(--pry); }
+  .badge-cyl { background: var(--cyl-bg); color: var(--cyl); }
+
+  /* SCORECARDS */
+  .scorecard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .scorecard { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
+  .scorecard:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .scorecard.clickable:hover { border-color: var(--blue); }
+  .scorecard-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); margin-bottom: 6px; }
+  .scorecard-name { font-size: 12px; color: var(--text2); margin-bottom: 10px; line-height: 1.3; min-height: 32px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .scorecard-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .scorecard-meta { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px; }
+  .semaforo { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sem-green { background: var(--green); }
+  .sem-yellow { background: var(--yellow); }
+  .sem-red { background: var(--red); }
+  .scorecard-bar { position: absolute; bottom: 0; left: 0; height: 3px; transition: width 0.6s ease; }
+  .scorecard-nota { font-size: 10px; color: var(--text3); font-style: italic; margin-top: 4px; }
+
+  /* DETALLE */
+  .detalle-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; display: none; }
+  .detalle-panel.visible { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  .detalle-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .detalle-title { font-size: 14px; font-weight: 600; }
+  .detalle-close { cursor: pointer; color: var(--text3); font-size: 20px; line-height: 1; }
+  .detalle-close:hover { color: var(--text); }
+  .detalle-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .detalle-table th { background: var(--surface2); padding: 8px 12px; text-align: left; font-weight: 500; color: var(--text2); border-bottom: 1px solid var(--border); }
+  .detalle-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .detalle-table tr:last-child td { border-bottom: none; }
+  .detalle-table tr:hover td { background: var(--surface2); }
+
+  /* HISTORICO */
+  .historico-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .historico-title { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+  .chart-container { width: 100%; min-height: 220px; }
+  .chart-container .empty-state { padding: 70px 20px; }
+  .chart-legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* RESUMEN */
+  .resumen-areas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .area-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.15s; }
+  .area-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  .area-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .area-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .area-card-score { font-size: 38px; font-weight: 700; line-height: 1; }
+  .area-card-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .area-card-sub { font-size: 11px; color: var(--text2); }
+  .tend-bar-bg { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .tend-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+  .tendencia-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .tendencia-row:last-child { border-bottom: none; }
+  .tend-name { font-size: 12px; font-weight: 500; min-width: 130px; }
+  .tend-val { font-size: 12px; font-weight: 600; min-width: 42px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+
+
+  /* LOGIN */
+  .login-overlay { position: fixed; inset: 0; background: #111827; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  .login-card { background: white; border-radius: 20px; padding: 40px; width: 380px; text-align: center; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
+  .login-logo { width: 56px; height: 56px; background: var(--blue); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white; margin: 0 auto 20px; }
+  .login-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px 20px; border: 1.5px solid var(--border); border-radius: 10px; background: white; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text); }
+  .google-btn:hover { background: var(--surface2); border-color: #9CA3AF; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .google-icon { width: 20px; height: 20px; }
+  .login-footer { font-size: 11px; color: var(--text3); margin-top: 20px; }
+  .login-error { background: #FEE2E2; color: #DC2626; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; display: none; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #374151; }
+  .user-name { font-size: 12px; color: #E5E7EB; }
+  .logout-btn { background: transparent; border: 1px solid #374151; color: #9CA3AF; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+  .logout-btn:hover { border-color: #6B7280; color: #E5E7EB; }
+  .access-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-top: 8px; }
+  .access-admin { background: #DBEAFE; color: #1D4ED8; }
+  .access-gerente { background: #D1FAE5; color: #065F46; }
+
+
+  /* SELECTOR DE MESES EN HISTÓRICO */
+  .meses-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .mes-chip { padding: 4px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; font-family: 'JetBrains Mono', monospace; cursor: pointer; background: var(--surface2); color: var(--text2); transition: all 0.1s; user-select: none; }
+  .mes-chip.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .mes-chip:hover:not(.active) { border-color: #9CA3AF; }
+
+  /* SELECTOR DE PERIODO */
+  .periodo-selector { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .periodo-selector label { font-size: 12px; font-weight: 500; color: var(--text2); white-space: nowrap; }
+  .periodo-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace; background: var(--surface2); color: var(--text); cursor: pointer; }
+  .periodo-select:focus { outline: none; border-color: var(--blue); }
+  .periodo-all-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; background: var(--surface2); color: var(--text2); transition: all 0.1s; }
+  .periodo-all-btn:hover, .periodo-all-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .periodo-info { font-size: 11px; color: var(--text3); margin-left: auto; }
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 13px; }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">MC</div>
+    <div class="login-title">Dashboard de Indicadores</div>
+    <div class="login-sub">Dirección de Operaciones · Mejora Continua<br>Inicia sesión con tu cuenta corporativa</div>
+    <div class="login-error" id="login-error"></div>
+    <button class="google-btn" onclick="iniciarSesionGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Iniciar sesión con Google
+    </button>
+    <div class="login-footer">Solo usuarios @multyconstrucciones.com.mx</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Cargando datos desde Google Sheets...</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">MC</div>
+    <div>
+      <div class="header-title">Dashboard de Indicadores</div>
+      <div class="header-sub">Dirección de Operaciones · Mejora Continua</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div class="periodo-badge" id="periodo-badge">Cargando...</div>
+    <button class="refresh-btn" onclick="cargarTodo()">↻ Actualizar</button>
+    <div class="user-info" id="user-info" style="display:none;">
+      <img class="user-avatar" id="user-avatar" src="" alt="">
+      <div>
+        <div class="user-name" id="user-name"></div>
+      </div>
+      <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-tab active" onclick="showPage('resumen',this)">Resumen General</div>
+  <div class="nav-tab" onclick="showPage('construccion',this)">Construcción</div>
+  <div class="nav-tab" onclick="showPage('planta',this)">Planta / Taller</div>
+  <div class="nav-tab" onclick="showPage('proyectos',this)">Proyectos</div>
+  <div class="nav-tab" onclick="showPage('compras',this)">Compras y Logística</div>
+</div>
+
+<div class="main">
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- RESUMEN -->
+  <div class="page active" id="page-resumen">
+    <div class="resumen-areas" id="resumen-areas">
+      <div class="empty-state"><div class="icon">⏳</div>Cargando áreas...</div>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">Promedio por área — últimos registros</div>
+      <div id="tend-container"></div>
+    </div>
+  </div>
+
+  <!-- CONSTRUCCIÓN -->
+  <div class="page" id="page-construccion">
+    <div class="area-header">
+      <div><div class="area-title">Construcción</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">Haz clic en un indicador para ver el detalle</div></div>
+      <span class="area-badge badge-con" id="badge-con">JUN 2026</span>
+    </div>
+    <div class="periodo-selector" id="selector-construccion">
+      <label>📅 Periodo:</label>
+      <select class="periodo-select" id="select-construccion" onchange="filtrarPeriodo('construccion')">
+        <option value="todos">Todos los meses</option>
+      </select>
+      <button class="periodo-all-btn active" id="btn-todos-construccion" onclick="mostrarTodos('construccion')">Ver todos</button>
+      <span class="periodo-info" id="info-construccion"></span>
+    </div>
+    <div class="section-label">Indicadores</div>
+    <div class="scorecard-grid" id="sc-construccion"><div class="empty-state"><div class="icon">⏳</div>Cargando...</div></div>
+    <div class="detalle-panel" id="detalle-construccion">
+      <div class="detalle-header">
+        <div class="detalle-title" id="detalle-con-title">Detalle</div>
+        <div class="detalle-close" onclick="cerrarDetalle('construccion')">×</div>
+      </div>
+      <table class="detalle-table">
+        <thead><tr><th>Sub-equipo / Persona</th><th>Valor</th><th>Estatus</th></tr></thead>
+        <tbody id="detalle-con-body"></tbody>
+      </table>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">Histórico — Construcción</div>
+      <div class="meses-selector" id="meses-construccion"></div>
+      <div class="chart-container" id="chart-construccion"></div>
+      <div class="chart-legend" id="legend-construccion"></div>
+    </div>
+  </div>
+
+  <!-- PLANTA -->
+  <div class="page" id="page-planta">
+    <div class="area-header">
+      <div><div class="area-title">Planta / Taller</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">Haz clic en un indicador para ver el desglose</div></div>
+      <span class="area-badge badge-pla" id="badge-pla">JUN 2026</span>
+    </div>
+    <div class="periodo-selector" id="selector-planta">
+      <label>📅 Periodo:</label>
+      <select class="periodo-select" id="select-planta" onchange="filtrarPeriodo('planta')">
+        <option value="todos">Todos los meses</option>
+      </select>
+      <button class="periodo-all-btn active" id="btn-todos-planta" onclick="mostrarTodos('planta')">Ver todos</button>
+      <span class="periodo-info" id="info-planta"></span>
+    </div>
+    <div class="scorecard-grid" id="sc-planta"><div class="empty-state"><div class="icon">⏳</div>Cargando...</div></div>
+    <div class="detalle-panel" id="detalle-planta">
+      <div class="detalle-header">
+        <div class="detalle-title" id="detalle-pla-title">Detalle</div>
+        <div class="detalle-close" onclick="cerrarDetalle('planta')">×</div>
+      </div>
+      <table class="detalle-table">
+        <thead><tr><th>Sub-equipo</th><th>Valor</th><th>Estatus</th></tr></thead>
+        <tbody id="detalle-pla-body"></tbody>
+      </table>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">Histórico — Planta / Taller</div>
+      <div class="meses-selector" id="meses-planta"></div>
+      <div class="chart-container" id="chart-planta"></div>
+      <div class="chart-legend" id="legend-planta"></div>
+    </div>
+  </div>
+
+  <!-- PROYECTOS -->
+  <div class="page" id="page-proyectos">
+    <div class="area-header">
+      <div><div class="area-title">Proyectos</div></div>
+      <span class="area-badge badge-pry" id="badge-pry">JUN 2026</span>
+    </div>
+    <div class="periodo-selector" id="selector-proyectos">
+      <label>📅 Periodo:</label>
+      <select class="periodo-select" id="select-proyectos" onchange="filtrarPeriodo('proyectos')">
+        <option value="todos">Todos los meses</option>
+      </select>
+      <button class="periodo-all-btn active" id="btn-todos-proyectos" onclick="mostrarTodos('proyectos')">Ver todos</button>
+      <span class="periodo-info" id="info-proyectos"></span>
+    </div>
+    <div class="scorecard-grid" id="sc-proyectos"><div class="empty-state"><div class="icon">⏳</div>Cargando...</div></div>
+    <div class="historico-card">
+      <div class="historico-title">Histórico — Proyectos</div>
+      <div class="meses-selector" id="meses-proyectos"></div>
+      <div class="chart-container" id="chart-proyectos"></div>
+      <div class="chart-legend" id="legend-proyectos"></div>
+    </div>
+  </div>
+
+  <!-- COMPRAS Y LOGÍSTICA -->
+  <div class="page" id="page-compras">
+    <div class="area-header">
+      <div><div class="area-title">Compras y Logística</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px;">Haz clic en un indicador para ver el detalle</div></div>
+      <span class="area-badge badge-cyl" id="badge-cyl">JUN 2026</span>
+    </div>
+    <div class="periodo-selector" id="selector-compras">
+      <label>📅 Periodo:</label>
+      <select class="periodo-select" id="select-compras" onchange="filtrarPeriodo('compras')">
+        <option value="todos">Todos los meses</option>
+      </select>
+      <button class="periodo-all-btn active" id="btn-todos-compras" onclick="mostrarTodos('compras')">Ver todos</button>
+      <span class="periodo-info" id="info-compras"></span>
+    </div>
+    <div class="scorecard-grid" id="sc-compras"><div class="empty-state"><div class="icon">⏳</div>Cargando...</div></div>
+    <div class="detalle-panel" id="detalle-compras">
+      <div class="detalle-header">
+        <div class="detalle-title" id="detalle-cyl-title">Detalle</div>
+        <div class="detalle-close" onclick="cerrarDetalle('compras')">×</div>
+      </div>
+      <table class="detalle-table">
+        <thead><tr><th>Concepto</th><th>Valor</th><th>Estatus</th></tr></thead>
+        <tbody id="detalle-cyl-body"></tbody>
+      </table>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">Histórico — Compras y Logística</div>
+      <div class="meses-selector" id="meses-compras"></div>
+      <div class="chart-container" id="chart-compras"></div>
+      <div class="chart-legend" id="legend-compras"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIGURACIÓN — IDs de tus archivos Google Sheets
+// ═══════════════════════════════════════════════════
+const SHEETS = {
+  construccion: {
+    id: '1mtn7SbLgu9Ieb2x8XIv2hUOP21WB0e-NUhkZUYATag0',
+    hoja: 'Datos',
+    area: 'Construcción',
+    color: 'var(--con)',
+    icon: '🏗️',
+    meta: 85
+  },
+  planta: {
+    id: '1_efV1_LGAKF8hpcNWt0FDWSZUOMPMDX088io1QOR8YU',
+    hoja: 'Datos',
+    area: 'Planta',
+    color: 'var(--pla)',
+    icon: '🏭',
+    meta: 85
+  },
+  proyectos: {
+    id: '1jLFcPVLIrhT3MSZjLXLxkXpmebVNQozZmGgCX03eFsI',
+    hoja: 'Datos',
+    area: 'Proyectos',
+    color: 'var(--pry)',
+    icon: '📐',
+    meta: 85
+  },
+  compras: {
+    id: '1L3pLaTe0yz9pobuMGEhNap6GTZZPlsJbjew3JRF_R6Q',
+    hoja: 'Datos',
+    area: 'Compras y Logística',
+    color: 'var(--cyl)',
+    icon: '📦',
+    meta: 85
+  }
+};
+
+// Colores por ID de indicador
+const COLORES_IND = {
+  'CON-01':'#D97706','CON-02':'#059669','CON-03':'#7C3AED',
+  'CON-04':'#2563EB','CON-05':'#DC2626','CON-06':'#0891B2',
+  'CON-07':'#65A30D','CON-08':'#DB2777',
+  'PLA-01':'#059669','PLA-02':'#D97706','PLA-03':'#7C3AED',
+  'PLA-04':'#2563EB','PLA-05':'#0891B2','PLA-06':'#DC2626',
+  'PRY-01':'#7C3AED','PRY-02':'#2563EB','PRY-03':'#059669','PRY-04':'#D97706',
+  'CYL-01':'#0891B2','CYL-02':'#2563EB','CYL-03':'#D97706','CYL-04':'#059669'
+};
+
+// Datos cargados
+let DATOS = { construccion: [], planta: [], proyectos: [], compras: [] };
+
+// ═══════════════════════════════════════════════════
+// CARGA DE DATOS DESDE GOOGLE SHEETS (CSV público)
+// ═══════════════════════════════════════════════════
+async function fetchSheet(sheetId, sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Error al cargar ${sheetName}: ${resp.status}`);
+  const text = await resp.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  // Parser robusto: maneja saltos de línea dentro de campos con comillas
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQ && text[i+1] === '"') { field += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      row.push(field); field = '';
+    } else if ((c === '\n' || c === '\r') && !inQ) {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.length > 1 || row[0] !== '') rows.push(row);
+      row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field !== '' || row.length > 0) { row.push(field); rows.push(row); }
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(vals => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim().replace(/[\r\n]+/g, ' '); });
+    return obj;
+  }).filter(r => r[headers[0]]);
+}
+
+// ═══════════════════════════════════════════════════
+// PROCESAMIENTO DE DATOS
+// ═══════════════════════════════════════════════════
+function procesarDatos(rows) {
+  // Agrupar por ID_indicador → último valor por periodo más reciente
+  const porId = {};
+  const porPeriodo = {};
+  const infoPorId = {}; // registros -info asociados a su indicador padre
+
+  rows.forEach(r => {
+    let id = r['ID_indicador'] || r['ID_Indicador'] || r['id_indicador'] || '';
+    const nombre = r['Nombre'] || '';
+    const area = r['Área'] || r['Area'] || '';
+    const sub = r['Sub_equipo'] || '';
+    let val = parseFloat((r['Valor_real'] || '0').replace(',','.'));
+    const periodo = r['Periodo'] || '';
+    const fecha = r['Fecha'] || '';
+    if (!id || isNaN(val)) return;
+
+    // Registros informativos (ej. CYL-01-info) → asociar al padre (CYL-01)
+    if (id.endsWith('-info')) {
+      const parentId = id.replace('-info', '');
+      if (!infoPorId[parentId]) infoPorId[parentId] = [];
+      // Solo guardar del periodo más reciente (se filtra después)
+      infoPorId[parentId].push({ nombre, val, periodo, fecha });
+      return;
+    }
+
+    // Convertir decimales a porcentaje (0.97 → 97) — solo indicadores normales
+    if (val > 0 && val <= 2) val = Math.round(val * 1000) / 10;
+
+    if (!porId[id]) porId[id] = { id, nombre, area, subequipos: {}, periodos: {} };
+    if (!porId[id].subequipos[sub]) porId[id].subequipos[sub] = [];
+    porId[id].subequipos[sub].push({ val, periodo, fecha });
+
+    if (!porPeriodo[periodo]) porPeriodo[periodo] = {};
+    if (!porPeriodo[periodo][id]) porPeriodo[periodo][id] = [];
+    porPeriodo[periodo][id].push({ val, sub });
+  });
+
+  // Periodo más reciente
+  const periodos = Object.keys(porPeriodo).sort();
+  const ultimoPeriodo = periodos[periodos.length - 1] || '';
+
+  // Construir lista de indicadores con valor del último periodo
+  const indicadores = Object.values(porId).map(ind => {
+    let valorActual = null;
+    const subVals = {};
+    Object.entries(ind.subequipos).forEach(([sub, registros]) => {
+      const delUltimo = registros.filter(r => r.periodo === ultimoPeriodo);
+      const vals = delUltimo.length ? delUltimo : registros;
+      const promSub = vals.reduce((a,b) => a + b.val, 0) / vals.length;
+      subVals[sub] = promSub;
+    });
+    // Usar valor de "General" como principal; si no existe, promediar todos
+    if (subVals['General'] !== undefined) {
+      valorActual = subVals['General'];
+    } else if (subVals['Proyectos'] !== undefined) {
+      valorActual = subVals['Proyectos'];
+    } else if (subVals['Planta'] !== undefined) {
+      valorActual = subVals['Planta'];
+    } else if (subVals['Taller'] !== undefined) {
+      valorActual = subVals['Taller'];
+    } else if (subVals['Compras'] !== undefined) {
+      valorActual = subVals['Compras'];
+    } else {
+      const todosVals = Object.values(subVals);
+      valorActual = todosVals.length ? todosVals.reduce((a,b)=>a+b,0)/todosVals.length : null;
+    }
+
+    // Histórico por periodo — misma prioridad que valorActual
+    const PRIORIDAD = ['General', 'Proyectos', 'Planta', 'Taller', 'Compras'];
+    const historico = {};
+    periodos.forEach(p => {
+      const registrosP = porPeriodo[p][ind.id];
+      if (!registrosP || !registrosP.length) return;
+      // Buscar primer sub_equipo prioritario presente en este periodo
+      let valP = null;
+      for (const pref of PRIORIDAD) {
+        const match = registrosP.find(r => r.sub === pref);
+        if (match) { valP = match.val; break; }
+      }
+      if (valP === null) {
+        // Sin sub_equipo prioritario: promediar todos
+        valP = registrosP.reduce((a,b)=>a+b.val,0) / registrosP.length;
+      }
+      historico[p] = valP;
+    });
+
+    // Datos informativos (-info) del periodo más reciente
+    const infoRows = (infoPorId[ind.id] || [])
+      .filter(r => r.periodo === ultimoPeriodo)
+      .map(r => ({ nombre: r.nombre, val: r.val }));
+
+    return {
+      id: ind.id,
+      nombre: ind.nombre,
+      area: ind.area,
+      valor: valorActual !== null ? Math.round(valorActual * 10) / 10 : null,
+      subVals,
+      historico,
+      infoRows,
+      ultimoPeriodo
+    };
+  });
+
+  return { indicadores, periodos, ultimoPeriodo };
+}
+
+function getSem(valor, meta) {
+  if (valor === null) return 'yellow';
+  if (valor >= meta) return 'green';
+  if (valor >= meta * 0.9) return 'yellow';
+  return 'red';
+}
+function getColor(sem) {
+  return sem==='green' ? 'var(--green)' : sem==='yellow' ? 'var(--yellow)' : 'var(--red)';
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+function renderScorecards(containerId, indicadores, area, meta, detalleArea) {
+  const grid = document.getElementById(containerId);
+  if (!indicadores.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div>No hay datos disponibles</div>';
+    return;
+  }
+
+  // Solo indicadores principales (sin subletras como CON-04a)
+  const principales = indicadores.filter(i => /^[A-Z]+-\d+$/.test(i.id));
+
+  grid.innerHTML = principales.map(ind => {
+    const val = ind.valor;
+    const valStr = val !== null ? val.toFixed(1) + '%' : '—';
+    // Semáforos especiales por indicador
+    let sem;
+    if (ind.id === 'PLA-02') {
+      // Rentabilidad: verde si positivo, rojo si negativo
+      sem = val > 0 ? 'green' : val === 0 ? 'yellow' : 'red';
+    } else if (ind.id === 'CYL-02' || ind.id === 'CYL-03') {
+      // Eficiencia: verde si >= 3%, rojo si < 3%
+      sem = val >= 3 ? 'green' : 'red';
+    } else {
+      sem = getSem(val, meta);
+    }
+    const color = getColor(sem);
+    const colorInd = COLORES_IND[ind.id] || color;
+    const hasDetalle = Object.keys(ind.subVals).length > 1 ||
+                       (Object.keys(ind.subVals).length === 1 && !Object.keys(ind.subVals).includes('General') && !Object.keys(ind.subVals).includes('')) ||
+                       (ind.infoRows && ind.infoRows.length > 0);
+    const nombreCorto = ind.nombre.length > 45 ? ind.nombre.substring(0, 42) + '...' : ind.nombre;
+    const pct = val !== null ? Math.min(val, 100) : 0;
+
+    return `<div class="scorecard ${hasDetalle ? 'clickable' : ''}"
+      onclick="${hasDetalle ? `mostrarDetalle('${detalleArea}','${ind.id}',${JSON.stringify(ind).replace(/"/g,"'")})` : ''}">
+      <div class="scorecard-id">${ind.id}</div>
+      <div class="scorecard-name" title="${ind.nombre}">${nombreCorto}</div>
+      <div class="scorecard-value" style="color:${color};">${valStr}</div>
+      <div class="scorecard-meta">
+        <div class="semaforo sem-${sem}"></div>
+        <span>Meta: ${meta}%</span>
+        ${hasDetalle ? '<span style="margin-left:auto;color:var(--blue);font-size:10px;">Ver detalle →</span>' : ''}
+      </div>
+      <div class="scorecard-bar" style="width:${pct}%;background:${colorInd};"></div>
+    </div>`;
+  }).join('');
+}
+
+function mostrarDetalle(area, id, ind) {
+  const panelId = 'detalle-' + area;
+  const prefix = area === 'construccion' ? 'con' : area === 'compras' ? 'cyl' : 'pla';
+  const titleId = 'detalle-' + prefix + '-title';
+  const bodyId  = 'detalle-' + prefix + '-body';
+
+  document.getElementById(titleId).textContent = ind.nombre + ' — Detalle';
+  const tbody = document.getElementById(bodyId);
+  const meta = SHEETS[area]?.meta || 85;
+
+  let filas = '';
+
+  // Sub-equipos (cuando hay más de uno o no es "General")
+  const subEntries = Object.entries(ind.subVals);
+  const mostrarSubs = subEntries.length > 1 ||
+    (subEntries.length === 1 && !['General',''].includes(subEntries[0][0]));
+
+  if (mostrarSubs) {
+    filas += subEntries.map(([sub, val]) => {
+      let sem;
+      if (id === 'PLA-02') {
+        sem = val > 0 ? 'green' : val === 0 ? 'yellow' : 'red';
+      } else if (id === 'CYL-02' || id === 'CYL-03') {
+        sem = val >= 3 ? 'green' : 'red';
+      } else {
+        sem = getSem(val, meta);
+      }
+      const dot = `<div class="semaforo sem-${sem}" style="display:inline-block;margin-right:4px;"></div>`;
+      const label = sem === 'green' ? 'Cumple' : sem === 'yellow' ? 'En riesgo' : 'No cumple';
+      return `<tr>
+        <td>${sub || 'General'}</td>
+        <td style="font-weight:600;font-family:'JetBrains Mono',monospace;">${val.toFixed(1)}%</td>
+        <td>${dot}${label}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Datos informativos (-info): montos en $ o porcentajes según el nombre
+  if (ind.infoRows && ind.infoRows.length > 0) {
+    filas += ind.infoRows.map(info => {
+      const esDinero = info.nombre.includes('$');
+      const nombreLimpio = info.nombre.replace(/\s*\([A-Z]\d+\)\s*$/, '');
+      const valStr = esDinero
+        ? '$' + info.val.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+        : info.val.toFixed(1) + (info.val <= 1 ? '%' : (info.nombre.toLowerCase().includes('%') ? '%' : ''));
+      return `<tr>
+        <td>${nombreLimpio}</td>
+        <td style="font-weight:600;font-family:'JetBrains Mono',monospace;">${valStr}</td>
+        <td><span style="font-size:11px;color:var(--text3);">Informativo</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  tbody.innerHTML = filas || '<tr><td colspan="3" style="text-align:center;color:var(--text3);">Sin datos de detalle</td></tr>';
+
+  const panel = document.getElementById(panelId);
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cerrarDetalle(area) {
+  document.getElementById('detalle-' + area).classList.remove('visible');
+}
+
+function renderMesesSelector(area, periodosDisponibles) {
+  const cont = document.getElementById('meses-' + area);
+  if (!cont) return;
+
+  // Inicializar selección: últimos 2 periodos por defecto
+  if (mesesHistorico[area].length === 0 && periodosDisponibles.length > 0) {
+    mesesHistorico[area] = periodosDisponibles.slice(-2);
+  }
+  // Quitar periodos que ya no existen
+  mesesHistorico[area] = mesesHistorico[area].filter(p => periodosDisponibles.includes(p));
+  if (mesesHistorico[area].length === 0 && periodosDisponibles.length > 0) {
+    mesesHistorico[area] = periodosDisponibles.slice(-2);
+  }
+
+  if (periodosDisponibles.length <= 1) {
+    cont.innerHTML = '';
+    return;
+  }
+
+  cont.innerHTML = periodosDisponibles.map(p => {
+    const active = mesesHistorico[area].includes(p);
+    return `<div class="mes-chip ${active ? 'active' : ''}" onclick="toggleMesHistorico('${area}','${p}')">${p}</div>`;
+  }).join('');
+}
+
+function toggleMesHistorico(area, periodo) {
+  const sel = mesesHistorico[area];
+  const idx = sel.indexOf(periodo);
+  if (idx >= 0) {
+    if (sel.length > 1) sel.splice(idx, 1); // siempre dejar al menos 1
+  } else {
+    sel.push(periodo);
+    sel.sort();
+  }
+  // Re-render chips y gráfico
+  const periodosDisponibles = DATOS[area]?.periodos || [];
+  renderMesesSelector(area, periodosDisponibles);
+  const gridId = 'chart-' + area;
+  const legendId = 'legend-' + area;
+  renderChart(gridId, legendId, DATOS[area]?.indicadores || [], mesesHistorico[area]);
+}
+
+function renderChart(containerId, legendId, indicadores, periodos) {
+  const container = document.getElementById(containerId);
+  const legend = document.getElementById(legendId);
+  if (!container) return;
+
+  const principales = indicadores.filter(i => /^[A-Z]+-\d+$/.test(i.id) && Object.keys(i.historico).length > 0);
+
+  if (!principales.length) {
+    container.innerHTML = '<div class="empty-state">Sin datos históricos aún</div>';
+    if (legend) legend.innerHTML = '';
+    return;
+  }
+
+  // Colores por periodo (más reciente = color del área, anteriores = gris)
+  const coloresPeriodo = ['#94A3B8', '#0891B2', '#2563EB', '#7C3AED'];
+  const nPeriodos = periodos.length;
+
+  const W = container.clientWidth || 900;
+  const padL = 40, padR = 20, padT = 15, padB = 36;
+  const rowH = 38;
+  const H = padT + padB + principales.length * rowH;
+  const plotW = W - padL - padR;
+  const maxVal = 100;
+
+  const xFor = v => padL + (Math.min(v, maxVal) / maxVal) * plotW;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;overflow:visible;">`;
+
+  // Líneas guía verticales
+  [0, 25, 50, 75, 100].forEach(g => {
+    const x = xFor(g);
+    svg += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${H-padB}" stroke="var(--border)" stroke-width="1" stroke-dasharray="${g===0?'0':'3,3'}"/>`;
+    svg += `<text x="${x}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="var(--text3)" font-family="JetBrains Mono, monospace">${g}%</text>`;
+  });
+
+  // Línea de meta (85%)
+  const metaX = xFor(85);
+  svg += `<line x1="${metaX}" y1="${padT}" x2="${metaX}" y2="${H-padB}" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.5"/>`;
+
+  // Barras agrupadas por indicador
+  const barH = Math.min(14, (rowH - 8) / nPeriodos);
+  principales.forEach((ind, i) => {
+    const rowY = padT + i * rowH;
+    // Etiqueta del indicador (eje Y)
+    svg += `<text x="${padL-8}" y="${rowY + rowH/2 + 4}" text-anchor="end" font-size="11" fill="var(--text2)" font-family="JetBrains Mono, monospace" font-weight="500">${ind.id}</text>`;
+
+    periodos.forEach((p, pi) => {
+      const v = ind.historico[p];
+      if (v === undefined) return;
+      const x = xFor(v);
+      const y = rowY + 4 + pi * (barH + 2);
+      const isLast = pi === nPeriodos - 1;
+      const cumple = v >= 85;
+      const color = isLast
+        ? (cumple ? '#0891B2' : '#67C5DB')
+        : coloresPeriodo[0];
+      svg += `<rect x="${padL}" y="${y}" width="${Math.max(x-padL,2)}" height="${barH}" fill="${color}" rx="${barH/2}" opacity="${isLast ? 1 : 0.45}">
+        <title>${ind.id} ${p}: ${v.toFixed(1)}%</title>
+      </rect>`;
+      // Valor al final de la barra más reciente
+      if (isLast) {
+        svg += `<text x="${x+4}" y="${y + barH - 1}" font-size="10" fill="var(--text2)" font-family="JetBrains Mono, monospace">${v.toFixed(1)}%</text>`;
+      }
+    });
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+
+  if (legend) {
+    let legendHtml = '';
+    // Leyenda de periodos (color por mes)
+    periodos.forEach((p, pi) => {
+      const isLast = pi === nPeriodos - 1;
+      const color = isLast ? 'var(--text2)' : coloresPeriodo[0];
+      const opacity = isLast ? '1' : '0.45';
+      legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${color};opacity:${opacity};"></div>${p}${isLast ? ' (actual)' : ''}</div>`;
+    });
+    // Tendencias por indicador
+    principales.forEach(ind => {
+      const vals = periodos.map(p => ind.historico[p]).filter(v => v !== undefined);
+      if (vals.length >= 2) {
+        const diff = vals[vals.length-1] - vals[vals.length-2];
+        if (Math.abs(diff) >= 0.5) {
+          const tendIcon = diff > 0
+            ? `<span style="color:#16A34A;">▲${diff.toFixed(1)}</span>`
+            : `<span style="color:#DC2626;">▼${Math.abs(diff).toFixed(1)}</span>`;
+          legendHtml += `<div class="legend-item">${ind.id} ${tendIcon}</div>`;
+        }
+      }
+    });
+    legend.innerHTML = legendHtml;
+  }
+}
+
+function renderResumen() {
+  const areas = [
+    { key: 'construccion', label: 'Construcción', icon: '🏗️', color: 'var(--con)', colorBg: 'var(--con-bg)', page: 'construccion', navIdx: 1 },
+    { key: 'planta',       label: 'Planta / Taller', icon: '🏭', color: 'var(--pla)', colorBg: 'var(--pla-bg)', page: 'planta', navIdx: 2 },
+    { key: 'proyectos',    label: 'Proyectos',    icon: '📐', color: 'var(--pry)', colorBg: 'var(--pry-bg)', page: 'proyectos', navIdx: 3 },
+    { key: 'compras',      label: 'Compras y Logística', icon: '📦', color: 'var(--cyl)', colorBg: 'var(--cyl-bg)', page: 'compras', navIdx: 4 },
+  ];
+
+  const resumenEl = document.getElementById('resumen-areas');
+  resumenEl.innerHTML = areas.map(a => {
+    const inds = DATOS[a.key]?.indicadores || [];
+    const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
+    // PLA-02 (rentabilidad) excluida del promedio — se muestra solo como indicador
+    const vals = principales
+      .filter(i => i.id !== 'PLA-02')
+      .map(i => i.valor).filter(v => v !== null && v > 0);
+    const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null;
+    const meta = SHEETS[a.key]?.meta || 85;
+    const sem = getSem(promedio, meta);
+    const color = getColor(sem);
+    const valStr = promedio !== null ? promedio.toFixed(1) + '%' : '—';
+    const periodo = inds[0]?.ultimoPeriodo || '';
+
+    return `<div class="area-card" onclick="showPage('${a.page}', document.querySelectorAll('.nav-tab')[${a.navIdx}])">
+      <div class="area-card-top">
+        <div class="area-card-icon" style="background:${a.colorBg};">${a.icon}</div>
+        <div class="semaforo sem-${sem}" style="width:12px;height:12px;margin-top:4px;"></div>
+      </div>
+      <div style="font-size:36px;font-weight:700;color:${a.color};">${valStr}</div>
+      <div style="font-size:13px;font-weight:600;margin-top:4px;">${a.label}</div>
+      <div style="font-size:11px;color:var(--text2);">${principales.length} indicadores · Meta: ${meta}% · ${periodo}</div>
+    </div>`;
+  }).join('');
+
+  // Tendencias
+  const tendEl = document.getElementById('tend-container');
+  tendEl.innerHTML = areas.map(a => {
+    const inds = DATOS[a.key]?.indicadores || [];
+    const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
+    const vals = principales.map(i => i.valor).filter(v => v !== null);
+    const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : 0;
+    const meta = SHEETS[a.key]?.meta || 85;
+    const sem = getSem(promedio, meta);
+    return `<div class="tendencia-row">
+      <div class="tend-name" style="color:${a.color};">${a.icon} ${a.label}</div>
+      <div class="tend-bar-bg"><div class="tend-bar-fill" style="width:${promedio}%;background:${a.color};"></div></div>
+      <div class="tend-val">${promedio > 0 ? promedio.toFixed(1)+'%' : '—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// CARGA PRINCIPAL
+// ═══════════════════════════════════════════════════
+async function cargarTodo() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('error-banner').style.display = 'none';
+
+  try {
+    const [rowsCon, rowsPla, rowsPry, rowsCyl] = await Promise.all([
+      fetchSheet(SHEETS.construccion.id, SHEETS.construccion.hoja),
+      fetchSheet(SHEETS.planta.id,       SHEETS.planta.hoja),
+      fetchSheet(SHEETS.proyectos.id,    SHEETS.proyectos.hoja),
+      fetchSheet(SHEETS.compras.id,      SHEETS.compras.hoja),
+    ]);
+
+    DATOS.construccion = procesarDatos(rowsCon);
+    DATOS.planta       = procesarDatos(rowsPla);
+    DATOS.proyectos    = procesarDatos(rowsPry);
+    DATOS.compras      = procesarDatos(rowsCyl);
+
+    // Periodo badge
+    const periodo = DATOS.construccion.ultimoPeriodo ||
+                    DATOS.planta.ultimoPeriodo ||
+                    DATOS.proyectos.ultimoPeriodo || '—';
+    document.getElementById('periodo-badge').textContent = periodo;
+    ['badge-con','badge-pla','badge-pry','badge-cyl'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = periodo + ' · Meta ≥ 85%';
+    });
+
+    // Render scorecards
+    renderScorecards('sc-construccion', DATOS.construccion.indicadores, 'Construcción', 85, 'construccion');
+    renderScorecards('sc-planta',       DATOS.planta.indicadores,       'Planta',       85, 'planta');
+    renderScorecards('sc-proyectos',    DATOS.proyectos.indicadores,    'Proyectos',    85, 'proyectos');
+    renderScorecards('sc-compras',      DATOS.compras.indicadores,      'Compras',      85, 'compras');
+
+    // Render charts
+    renderMesesSelector('construccion', DATOS.construccion.periodos);
+    renderMesesSelector('planta',       DATOS.planta.periodos);
+    renderMesesSelector('proyectos',    DATOS.proyectos.periodos);
+    renderMesesSelector('compras',      DATOS.compras.periodos);
+
+    renderChart('chart-construccion','legend-construccion', DATOS.construccion.indicadores, mesesHistorico.construccion);
+    renderChart('chart-planta',      'legend-planta',       DATOS.planta.indicadores,       mesesHistorico.planta);
+    renderChart('chart-proyectos',   'legend-proyectos',    DATOS.proyectos.indicadores,    mesesHistorico.proyectos);
+    renderChart('chart-compras',     'legend-compras',      DATOS.compras.indicadores,      mesesHistorico.compras);
+
+    // Resumen
+    renderResumen();
+    llenarSelectores();
+
+  } catch (err) {
+    console.error(err);
+    const banner = document.getElementById('error-banner');
+    banner.style.display = 'block';
+    banner.innerHTML = `⚠️ <strong>Error al cargar datos:</strong> ${err.message}. 
+      Verifica que las hojas estén compartidas públicamente (Cualquier persona con el enlace → Lector).`;
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+// NAVEGACIÓN
+function showPage(pageId, tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  if (tab) tab.classList.add('active');
+}
+
+
+// ═══════════════════════════════════════════════════
+// FILTRO DE PERIODO
+// ═══════════════════════════════════════════════════
+let periodoSeleccionado = { construccion: 'todos', planta: 'todos', proyectos: 'todos', compras: 'todos' };
+let mesesHistorico = { construccion: [], planta: [], proyectos: [], compras: [] }; // periodos seleccionados para el gráfico
+
+function llenarSelectores() {
+  ['construccion', 'planta', 'proyectos', 'compras'].forEach(area => {
+    const sel = document.getElementById('select-' + area);
+    if (!sel) return;
+    const periodos = DATOS[area]?.periodos || [];
+    // Limpiar opciones excepto "todos"
+    while (sel.options.length > 1) sel.remove(1);
+    // Agregar periodos en orden descendente
+    [...periodos].reverse().forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      sel.appendChild(opt);
+    });
+    // Seleccionar el más reciente por defecto
+    if (periodos.length > 0) {
+      const ultimo = periodos[periodos.length - 1];
+      sel.value = ultimo;
+      periodoSeleccionado[area] = ultimo;
+      filtrarPeriodo(area);
+    }
+  });
+}
+
+function filtrarPeriodo(area) {
+  const sel = document.getElementById('select-' + area);
+  const periodo = sel.value;
+  periodoSeleccionado[area] = periodo;
+
+  const btnTodos = document.getElementById('btn-todos-' + area);
+  const info = document.getElementById('info-' + area);
+
+  if (periodo === 'todos') {
+    btnTodos.classList.add('active');
+    if (info) info.textContent = 'Mostrando todos los periodos';
+  } else {
+    btnTodos.classList.remove('active');
+    if (info) info.textContent = 'Periodo: ' + periodo;
+  }
+
+  // Re-renderizar scorecards con filtro
+  const meta = SHEETS[area]?.meta || 85;
+  const inds = DATOS[area]?.indicadores || [];
+
+  // Filtrar valores por periodo seleccionado
+  const indsFiltrados = inds.map(ind => {
+    if (periodo === 'todos') return ind;
+    const valPeriodo = ind.historico[periodo];
+    return { ...ind, valor: valPeriodo !== undefined ? Math.round(valPeriodo * 10) / 10 : null };
+  });
+
+  const gridId = 'sc-' + area;
+  const detalleArea = area;
+  renderScorecards(gridId, indsFiltrados, area, meta, detalleArea);
+
+  // Actualizar badge
+  const badge = document.getElementById('badge-' + area.substring(0,3));
+  if (badge && periodo !== 'todos') {
+    badge.textContent = periodo + ' · Meta ≥ ' + meta + '%';
+  }
+}
+
+function mostrarTodos(area) {
+  const sel = document.getElementById('select-' + area);
+  sel.value = 'todos';
+  filtrarPeriodo(area);
+}
+
+
+// ═══════════════════════════════════════════════════
+// CONTROL DE ACCESO — USUARIOS AUTORIZADOS
+// ═══════════════════════════════════════════════════
+const USUARIOS = {
+  // ADMIN — ven todo
+  'mmendoza@multyconstrucciones.com.mx':       { nombre: 'Maria Lizzet', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
+  'lcastilla@multyconstrucciones.com.mx':      { nombre: 'Luis Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
+  'acastilla@multyconstrucciones.com.mx':      { nombre: 'A. Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
+  'angela.castilla@multyconstrucciones.com.mx':{ nombre: 'Angela Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
+  // CONSTRUCCIÓN
+  'hmanjarrez@multyconstrucciones.com.mx':     { nombre: 'H. Manjarrez', rol: 'Gerente', areas: ['construccion'] },
+  'osoto@multyconstrucciones.com.mx':          { nombre: 'Oscar Soto', rol: 'Coordinador', areas: ['construccion'] },
+  'lreyes@multyconstrucciones.com.mx':         { nombre: 'Luis Reyes', rol: 'Coordinador', areas: ['construccion'] },
+  // PROYECTOS
+  'dalmaral@multyconstrucciones.com.mx':       { nombre: 'D. Almaral', rol: 'Gerente', areas: ['proyectos'] },
+  'abenitez@multyconstrucciones.com.mx':       { nombre: 'A. Benítez', rol: 'Gerente', areas: ['proyectos'] },
+  // PLANTA
+  'mverdugo@multyconstrucciones.com.mx':       { nombre: 'M. Verdugo', rol: 'Gerente', areas: ['planta'] },
+  'hponce@multyconstrucciones.com.mx':         { nombre: 'Héctor Ponce', rol: 'Gerente', areas: ['planta'] },
+  // COMPRAS Y LOGÍSTICA
+  'mbarrientos@multyconstrucciones.com.mx':    { nombre: 'M. Graciela Barrientos', rol: 'Gerente', areas: ['compras'] },
+};
+
+let usuarioActual = null;
+let googleAuth = null;
+
+function iniciarSesionGoogle() {
+  // Usar Google Identity Services
+  google.accounts.id.initialize({
+    client_id: '368143701722-placeholder.apps.googleusercontent.com',
+    callback: handleCredentialResponse,
+    auto_select: false,
+  });
+  google.accounts.id.prompt();
+}
+
+function handleCredentialResponse(response) {
+  // Decodificar JWT token de Google
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  const email = payload.email;
+  const nombre = payload.name;
+  const foto = payload.picture;
+
+  // Verificar dominio
+  if (!email.endsWith('@multyconstrucciones.com.mx')) {
+    mostrarErrorLogin('Acceso restringido a cuentas @multyconstrucciones.com.mx');
+    return;
+  }
+
+  // Verificar usuario autorizado
+  const usuario = USUARIOS[email];
+  if (!usuario) {
+    mostrarErrorLogin('Tu cuenta no tiene acceso asignado. Contacta a administración.');
+    return;
+  }
+
+  // Login exitoso
+  usuarioActual = { ...usuario, email, foto };
+  guardarSesion();
+  completarLogin();
+}
+
+function guardarSesion() {
+  try {
+    sessionStorage.setItem('mc_usuario', JSON.stringify(usuarioActual));
+  } catch (e) {}
+}
+
+function restaurarSesion() {
+  try {
+    const saved = sessionStorage.getItem('mc_usuario');
+    if (saved) {
+      usuarioActual = JSON.parse(saved);
+      completarLogin();
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function completarLogin() {
+  // Ocultar overlay de login
+  document.getElementById('login-overlay').style.display = 'none';
+
+  // Mostrar info de usuario en header
+  const userInfo = document.getElementById('user-info');
+  const userName = document.getElementById('user-name');
+  const userAvatar = document.getElementById('user-avatar');
+  userInfo.style.display = 'flex';
+  userName.textContent = usuarioActual.nombre;
+  if (userAvatar && usuarioActual.foto) userAvatar.src = usuarioActual.foto;
+
+  // Mostrar/ocultar pestañas según acceso
+  const tabs = document.querySelectorAll('.nav-tab');
+  const pageIds = ['resumen', 'construccion', 'planta', 'proyectos', 'compras'];
+  tabs.forEach((tab, i) => {
+    const pageId = pageIds[i];
+    if (usuarioActual.areas.includes(pageId)) {
+      tab.style.display = '';
+    } else {
+      tab.style.display = 'none';
+    }
+  });
+
+  // Navegar a la primera área permitida
+  const primeraArea = usuarioActual.areas[0];
+  const tabIdx = pageIds.indexOf(primeraArea);
+  if (tabIdx >= 0) {
+    showPage(primeraArea, document.querySelectorAll('.nav-tab')[tabIdx]);
+  }
+
+  // Cargar datos
+  cargarTodo();
+}
+
+function mostrarErrorLogin(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function cerrarSesion() {
+  usuarioActual = null;
+  try { sessionStorage.removeItem('mc_usuario'); } catch (e) {}
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('user-info').style.display = 'none';
+  document.getElementById('login-error').style.display = 'none';
+  if (typeof google !== 'undefined') {
+    google.accounts.id.disableAutoSelect();
+  }
+}
+
+// Para desarrollo/demo: login simulado con prompt
+function iniciarSesionGoogle() {
+  const email = prompt('Ingresa tu correo corporativo (@multyconstrucciones.com.mx):');
+  if (!email) return;
+
+  if (!email.endsWith('@multyconstrucciones.com.mx')) {
+    mostrarErrorLogin('Acceso restringido a cuentas @multyconstrucciones.com.mx');
+    return;
+  }
+
+  const usuario = USUARIOS[email.toLowerCase()];
+  if (!usuario) {
+    mostrarErrorLogin('Tu cuenta no tiene acceso asignado. Contacta a administración.');
+    return;
+  }
+
+  usuarioActual = { ...usuario, email, foto: '' };
+  guardarSesion();
+  completarLogin();
+}
+
+
+// INIT — restaurar sesión si existe, si no esperar login
+restaurarSesion();
+
+</script>
+</body>
+</html>
