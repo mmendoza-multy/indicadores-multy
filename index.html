@@ -104,6 +104,11 @@
   .desempeno-value { font-size: 48px; font-weight: 700; line-height: 1; }
   .desempeno-sub { font-size: 12px; color: #9CA3AF; margin-top: 6px; }
   .desempeno-right { display: flex; align-items: center; gap: 10px; }
+  .desempeno-breakdown { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+  .desempeno-mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .desempeno-mini-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .desempeno-mini-value { font-size: 28px; font-weight: 700; }
+  .desempeno-mini-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
   .area-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.15s; }
   .area-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
   .area-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
@@ -234,12 +239,28 @@
     </div>
     <div class="desempeno-card">
       <div>
-        <div class="desempeno-label">Desempeño General</div>
+        <div class="desempeno-label">Panorama Global</div>
         <div class="desempeno-value" id="desempeno-valor">—</div>
         <div class="desempeno-sub" id="desempeno-sub"></div>
       </div>
       <div class="desempeno-right">
         <div class="semaforo" id="desempeno-sem" style="width:18px;height:18px;"></div>
+      </div>
+    </div>
+    <div class="desempeno-breakdown">
+      <div class="desempeno-mini-card">
+        <div>
+          <div class="desempeno-mini-label">⚙️ Desempeño Operativo (50%)</div>
+          <div class="desempeno-mini-sub">Promedio de Construcción, Planta/Taller, Proyectos y Compras y Logística</div>
+        </div>
+        <div class="desempeno-mini-value" id="operativo-valor">—</div>
+      </div>
+      <div class="desempeno-mini-card">
+        <div>
+          <div class="desempeno-mini-label">💰 Desempeño Financiero (50%)</div>
+          <div class="desempeno-mini-sub" id="financiero-sub">Utilidad bruta proyectada y costo directo</div>
+        </div>
+        <div class="desempeno-mini-value" id="financiero-valor">—</div>
       </div>
     </div>
     <div class="resumen-areas" id="resumen-areas">
@@ -420,6 +441,14 @@ const SHEETS = {
     color: 'var(--cyl)',
     icon: '📦',
     meta: 85
+  },
+  financiero: {
+    id: '', // ← pega aquí el ID de la hoja "Financiero" cuando esté creada y compartida
+    hoja: 'Datos',
+    area: 'Financiero',
+    color: 'var(--text)',
+    icon: '💰',
+    meta: 85
   }
 };
 
@@ -472,6 +501,10 @@ const PESOS = {
     'CYL-03': { peso: 30, tipo: 'binario_meta_minima', meta: 3 },
     'CYL-04': { peso: 20, tipo: 'directo' },
   },
+  financiero: {
+    'FIN-01': { peso: 50, tipo: 'directo' }, // Utilidad bruta proyectada — cumplimiento
+    'FIN-02': { peso: 50, tipo: 'directo' }, // Cumplimiento costo directo
+  },
 };
 
 // Convierte el valor de un indicador a su "contribución" (0-100) según su tipo
@@ -512,7 +545,7 @@ function calcularGeneral(areaKey, indicadores, periodo) {
 }
 
 // Datos cargados
-let DATOS = { construccion: [], planta: [], proyectos: [], compras: [] };
+let DATOS = { construccion: [], planta: [], proyectos: [], compras: [], financiero: [] };
 
 // ═══════════════════════════════════════════════════
 // CARGA DE DATOS DESDE GOOGLE SHEETS (CSV público)
@@ -934,25 +967,59 @@ function renderResumen() {
   ];
 
   const periodoSel = periodoSeleccionado.resumen;
+  const periodoOperativo = periodoSel === 'todos' ? (DATOS.construccion?.ultimoPeriodo || '') : periodoSel;
+  const periodoMostrado = periodoOperativo;
 
-  // Desempeño General — promedio simple de los generales ponderados de las 4 áreas
+  // Desempeño Operativo — promedio simple de los generales ponderados de las 4 áreas
   const generalesPorArea = areas.map(a => calcularGeneral(a.key, DATOS[a.key]?.indicadores || [], periodoSel));
   const generalesValidos = generalesPorArea.filter(v => v !== null);
-  const desempenoGeneral = generalesValidos.length
+  const desempenoOperativo = generalesValidos.length
     ? generalesValidos.reduce((s,v)=>s+v,0) / generalesValidos.length
     : null;
 
+  // Desempeño Financiero — los cierres financieros van un mes detrás del operativo.
+  // Se usa el último periodo financiero disponible que sea <= al periodo operativo
+  // mostrado (ej. en junio se muestra el cierre de mayo, ya disponible).
+  const indsFinanciero = DATOS.financiero?.indicadores || [];
+  const periodosFin = DATOS.financiero?.periodos || [];
+  let periodoFinanciero = null;
+  if (periodosFin.length) {
+    const candidatos = periodosFin.filter(p => p <= periodoOperativo);
+    periodoFinanciero = candidatos.length ? candidatos[candidatos.length - 1] : periodosFin[periodosFin.length - 1];
+  }
+  const desempenoFinanciero = periodoFinanciero
+    ? calcularGeneral('financiero', indsFinanciero, periodoFinanciero)
+    : null;
+  const hayDatosFinancieros = desempenoFinanciero !== null;
+
+  // Panorama Global — 50% Operativo + 50% Financiero (si no hay datos financieros, solo Operativo)
+  let panoramaGlobal;
+  if (desempenoOperativo !== null && desempenoFinanciero !== null) {
+    panoramaGlobal = 0.5 * desempenoOperativo + 0.5 * desempenoFinanciero;
+  } else {
+    panoramaGlobal = desempenoOperativo;
+  }
+
   const desempenoMeta = 85;
-  const desempenoSem = getSem(desempenoGeneral, desempenoMeta);
-  const periodoMostrado = periodoSel === 'todos' ? (DATOS.construccion?.ultimoPeriodo || '') : periodoSel;
+  const desempenoSem = getSem(panoramaGlobal, desempenoMeta);
 
   document.getElementById('desempeno-valor').textContent =
-    desempenoGeneral !== null ? desempenoGeneral.toFixed(1) + '%' : '—';
-  document.getElementById('desempeno-sub').textContent =
-    `Promedio de Construcción, Planta/Taller, Proyectos y Compras y Logística · ${periodoMostrado}`;
+    panoramaGlobal !== null ? panoramaGlobal.toFixed(1) + '%' : '—';
+  document.getElementById('desempeno-sub').textContent = hayDatosFinancieros
+    ? `50% Operativo (${periodoOperativo}) + 50% Financiero (cierre ${periodoFinanciero})`
+    : `Desempeño Operativo (sin datos financieros aún) · ${periodoMostrado}`;
   const semEl = document.getElementById('desempeno-sem');
   semEl.classList.remove('sem-green','sem-yellow','sem-red');
   semEl.classList.add('sem-' + desempenoSem);
+
+  // Tarjetas de desglose
+  document.getElementById('operativo-valor').textContent =
+    desempenoOperativo !== null ? desempenoOperativo.toFixed(1) + '%' : '—';
+  document.getElementById('financiero-valor').textContent =
+    desempenoFinanciero !== null ? desempenoFinanciero.toFixed(1) + '%' : '—';
+  document.getElementById('financiero-sub').textContent = hayDatosFinancieros
+    ? 'Utilidad bruta proyectada y costo directo · cierre ' + periodoFinanciero
+    : 'Pendiente: conectar hoja "Financiero" en SHEETS.financiero.id';
 
   const resumenEl = document.getElementById('resumen-areas');
   resumenEl.innerHTML = areas.map(a => {
@@ -1020,17 +1087,19 @@ async function cargarTodo() {
   document.getElementById('error-banner').style.display = 'none';
 
   try {
-    const [rowsCon, rowsPla, rowsPry, rowsCyl] = await Promise.all([
+    const [rowsCon, rowsPla, rowsPry, rowsCyl, rowsFin] = await Promise.all([
       fetchSheet(SHEETS.construccion.id, SHEETS.construccion.hoja),
       fetchSheet(SHEETS.planta.id,       SHEETS.planta.hoja),
       fetchSheet(SHEETS.proyectos.id,    SHEETS.proyectos.hoja),
       fetchSheet(SHEETS.compras.id,      SHEETS.compras.hoja),
+      SHEETS.financiero.id ? fetchSheet(SHEETS.financiero.id, SHEETS.financiero.hoja) : Promise.resolve([]),
     ]);
 
     DATOS.construccion = procesarDatos(rowsCon);
     DATOS.planta       = procesarDatos(rowsPla);
     DATOS.proyectos    = procesarDatos(rowsPry);
     DATOS.compras      = procesarDatos(rowsCyl);
+    DATOS.financiero   = procesarDatos(rowsFin);
 
     // Periodo badge
     const periodo = DATOS.construccion.ultimoPeriodo ||
