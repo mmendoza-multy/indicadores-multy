@@ -130,20 +130,19 @@
   .login-card { background: white; border-radius: 20px; padding: 40px; width: 380px; text-align: center; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
   .login-logo { width: 56px; height: 56px; background: var(--blue); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white; margin: 0 auto 20px; }
   .login-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
-  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px 20px; border: 1.5px solid var(--border); border-radius: 10px; background: white; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text); }
-  .google-btn:hover { background: var(--surface2); border-color: #9CA3AF; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .google-icon { width: 20px; height: 20px; }
-  .login-footer { font-size: 11px; color: var(--text3); margin-top: 20px; }
+  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+  .login-footer { font-size: 11px; color: var(--text3); margin-top: 16px; }
   .login-error { background: #FEE2E2; color: #DC2626; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; display: none; }
   .user-info { display: flex; align-items: center; gap: 8px; }
   .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #374151; }
   .user-name { font-size: 12px; color: #E5E7EB; }
   .logout-btn { background: transparent; border: 1px solid #374151; color: #9CA3AF; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
   .logout-btn:hover { border-color: #6B7280; color: #E5E7EB; }
-  .access-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-top: 8px; }
-  .access-admin { background: #DBEAFE; color: #1D4ED8; }
-  .access-gerente { background: #D1FAE5; color: #065F46; }
+  .login-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text); background: var(--surface2); margin-bottom: 12px; transition: border-color 0.15s; box-sizing: border-box; }
+  .login-input:focus { outline: none; border-color: var(--blue); background: white; }
+  .login-btn { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .login-btn:hover { background: #1D4ED8; }
+  .login-btn:disabled { background: var(--text3); cursor: not-allowed; }
 
 
   /* SELECTOR DE MESES EN HISTÓRICO */
@@ -172,17 +171,11 @@
   <div class="login-card">
     <div class="login-logo">MC</div>
     <div class="login-title">Dashboard de Indicadores</div>
-    <div class="login-sub">Dirección de Operaciones · Mejora Continua<br>Inicia sesión con tu cuenta corporativa</div>
+    <div class="login-sub">Dirección de Operaciones · Mejora Continua</div>
     <div class="login-error" id="login-error"></div>
-    <button class="google-btn" onclick="iniciarSesionGoogle()">
-      <svg class="google-icon" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      Iniciar sesión con Google
-    </button>
+    <input class="login-input" type="email" id="login-email" placeholder="correo@multyconstrucciones.com.mx" autocomplete="username">
+    <input class="login-input" type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') iniciarSesion()">
+    <button class="login-btn" id="login-btn" onclick="iniciarSesion()">Iniciar sesión</button>
     <div class="login-footer">Solo usuarios @multyconstrucciones.com.mx</div>
   </div>
 </div>
@@ -1280,71 +1273,56 @@ function mostrarTodos(area) {
 
 
 // ═══════════════════════════════════════════════════
-// CONTROL DE ACCESO — USUARIOS AUTORIZADOS
+// CONTROL DE ACCESO — USUARIOS DESDE GOOGLE SHEETS
 // ═══════════════════════════════════════════════════
-const USUARIOS = {
-  // ADMIN — ven todo
-  'mmendoza@multyconstrucciones.com.mx':       { nombre: 'Maria Lizzet', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  'lcastilla@multyconstrucciones.com.mx':      { nombre: 'Luis Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  'acastilla@multyconstrucciones.com.mx':      { nombre: 'A. Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  'angela.castilla@multyconstrucciones.com.mx':{ nombre: 'Angela Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  // CONSTRUCCIÓN
-  'hmanjarrez@multyconstrucciones.com.mx':     { nombre: 'H. Manjarrez', rol: 'Gerente', areas: ['construccion'] },
-  'osoto@multyconstrucciones.com.mx':          { nombre: 'Oscar Soto', rol: 'Coordinador', areas: ['construccion'] },
-  'lreyes@multyconstrucciones.com.mx':         { nombre: 'Luis Reyes', rol: 'Coordinador', areas: ['construccion'] },
-  // PROYECTOS
-  'dalmaral@multyconstrucciones.com.mx':       { nombre: 'D. Almaral', rol: 'Gerente', areas: ['proyectos'] },
-  'abenitez@multyconstrucciones.com.mx':       { nombre: 'A. Benítez', rol: 'Gerente', areas: ['proyectos'] },
-  // PLANTA
-  'mverdugo@multyconstrucciones.com.mx':       { nombre: 'M. Verdugo', rol: 'Gerente', areas: ['planta'] },
-  'hponce@multyconstrucciones.com.mx':         { nombre: 'Héctor Ponce', rol: 'Gerente', areas: ['planta'] },
-  // COMPRAS Y LOGÍSTICA
-  'mbarrientos@multyconstrucciones.com.mx':    { nombre: 'M. Graciela Barrientos', rol: 'Gerente', areas: ['compras'] },
-};
-
 let usuarioActual = null;
-let googleAuth = null;
+let USUARIOS_SHEETS = []; // se carga desde la pestaña "Usuarios" de la hoja Financiero
 
-function iniciarSesionGoogle() {
-  // Usar Google Identity Services
-  google.accounts.id.initialize({
-    client_id: '368143701722-placeholder.apps.googleusercontent.com',
-    callback: handleCredentialResponse,
-    auto_select: false,
-  });
-  google.accounts.id.prompt();
+async function cargarUsuarios() {
+  try {
+    const rows = await fetchSheet(SHEETS.financiero.id, 'Usuarios');
+    USUARIOS_SHEETS = rows.map(r => ({
+      correo:   (r['correo']   || r['Correo']   || '').trim().toLowerCase(),
+      nombre:   (r['nombre']   || r['Nombre']   || '').trim(),
+      rol:      (r['rol']      || r['Rol']       || '').trim(),
+      areas:    (r['areas']    || r['Areas']     || '').trim().split(',').map(a => a.trim()).filter(Boolean),
+      password: (r['password'] || r['Password'] || '').trim(),
+    })).filter(u => u.correo);
+  } catch(e) {
+    console.warn('No se pudo cargar la lista de usuarios:', e.message);
+  }
 }
 
-function handleCredentialResponse(response) {
-  // Decodificar JWT token de Google
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
-  const email = payload.email;
-  const nombre = payload.name;
-  const foto = payload.picture;
+function iniciarSesion() {
+  const email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+  const pass  = (document.getElementById('login-password').value || '').trim();
 
-  // Verificar dominio
+  if (!email || !pass) {
+    mostrarErrorLogin('Ingresa tu correo y contraseña.');
+    return;
+  }
   if (!email.endsWith('@multyconstrucciones.com.mx')) {
     mostrarErrorLogin('Acceso restringido a cuentas @multyconstrucciones.com.mx');
     return;
   }
 
-  // Verificar usuario autorizado
-  const usuario = USUARIOS[email];
+  const usuario = USUARIOS_SHEETS.find(u => u.correo === email);
   if (!usuario) {
-    mostrarErrorLogin('Tu cuenta no tiene acceso asignado. Contacta a administración.');
+    mostrarErrorLogin('Correo no registrado. Contacta a administración.');
+    return;
+  }
+  if (usuario.password !== pass) {
+    mostrarErrorLogin('Contraseña incorrecta.');
     return;
   }
 
-  // Login exitoso
-  usuarioActual = { ...usuario, email, foto };
+  usuarioActual = { ...usuario, email, foto: '' };
   guardarSesion();
   completarLogin();
 }
 
 function guardarSesion() {
-  try {
-    sessionStorage.setItem('mc_usuario', JSON.stringify(usuarioActual));
-  } catch (e) {}
+  try { sessionStorage.setItem('mc_usuario', JSON.stringify(usuarioActual)); } catch(e) {}
 }
 
 function restaurarSesion() {
@@ -1355,42 +1333,28 @@ function restaurarSesion() {
       completarLogin();
       return true;
     }
-  } catch (e) {}
+  } catch(e) {}
   return false;
 }
 
 function completarLogin() {
-  // Ocultar overlay de login
   document.getElementById('login-overlay').style.display = 'none';
 
-  // Mostrar info de usuario en header
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
-  const userAvatar = document.getElementById('user-avatar');
   userInfo.style.display = 'flex';
   userName.textContent = usuarioActual.nombre;
-  if (userAvatar && usuarioActual.foto) userAvatar.src = usuarioActual.foto;
 
-  // Mostrar/ocultar pestañas según acceso
   const tabs = document.querySelectorAll('.nav-tab');
   const pageIds = ['resumen', 'construccion', 'planta', 'proyectos', 'compras'];
   tabs.forEach((tab, i) => {
-    const pageId = pageIds[i];
-    if (usuarioActual.areas.includes(pageId)) {
-      tab.style.display = '';
-    } else {
-      tab.style.display = 'none';
-    }
+    tab.style.display = usuarioActual.areas.includes(pageIds[i]) ? '' : 'none';
   });
 
-  // Navegar a la primera área permitida
   const primeraArea = usuarioActual.areas[0];
   const tabIdx = pageIds.indexOf(primeraArea);
-  if (tabIdx >= 0) {
-    showPage(primeraArea, document.querySelectorAll('.nav-tab')[tabIdx]);
-  }
+  if (tabIdx >= 0) showPage(primeraArea, document.querySelectorAll('.nav-tab')[tabIdx]);
 
-  // Cargar datos
   cargarTodo();
 }
 
@@ -1402,39 +1366,21 @@ function mostrarErrorLogin(msg) {
 
 function cerrarSesion() {
   usuarioActual = null;
-  try { sessionStorage.removeItem('mc_usuario'); } catch (e) {}
+  try { sessionStorage.removeItem('mc_usuario'); } catch(e) {}
   document.getElementById('login-overlay').style.display = 'flex';
   document.getElementById('user-info').style.display = 'none';
   document.getElementById('login-error').style.display = 'none';
-  if (typeof google !== 'undefined') {
-    google.accounts.id.disableAutoSelect();
-  }
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
 }
 
-// Para desarrollo/demo: login simulado con prompt
-function iniciarSesionGoogle() {
-  const email = prompt('Ingresa tu correo corporativo (@multyconstrucciones.com.mx):');
-  if (!email) return;
-
-  if (!email.endsWith('@multyconstrucciones.com.mx')) {
-    mostrarErrorLogin('Acceso restringido a cuentas @multyconstrucciones.com.mx');
-    return;
+// INIT — cargar usuarios y restaurar sesión si existe
+cargarUsuarios().then(() => {
+  if (!restaurarSesion()) {
+    // Mostrar login — ya visible por defecto
   }
+});
 
-  const usuario = USUARIOS[email.toLowerCase()];
-  if (!usuario) {
-    mostrarErrorLogin('Tu cuenta no tiene acceso asignado. Contacta a administración.');
-    return;
-  }
-
-  usuarioActual = { ...usuario, email, foto: '' };
-  guardarSesion();
-  completarLogin();
-}
-
-
-// INIT — restaurar sesión si existe, si no esperar login
-restaurarSesion();
 
 </script>
 </body>
