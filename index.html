@@ -419,6 +419,83 @@ const COLORES_IND = {
   'CYL-01':'#0891B2','CYL-02':'#2563EB','CYL-03':'#D97706','CYL-04':'#059669'
 };
 
+// ═══════════════════════════════════════════════════
+// PESOS PARA EL "GENERAL" PONDERADO DE CADA ÁREA
+// tipo: 'directo' (valor 0-100% capado a 100),
+//       'binario_meta_minima' (valor >= meta → 100%, si no → 0%),
+//       'binario_signo' (valor > 0 → 100%, si no → 0%)
+// peso: 0 = no pondera (se excluye del cálculo del general)
+// ═══════════════════════════════════════════════════
+const PESOS = {
+  construccion: {
+    'CON-01': { peso: 20, tipo: 'directo' },
+    'CON-02': { peso: 20, tipo: 'directo' },
+    'CON-03': { peso: 0,  tipo: 'directo' },
+    'CON-04': { peso: 20, tipo: 'directo' },
+    'CON-05': { peso: 20, tipo: 'directo' },
+    'CON-06': { peso: 10, tipo: 'directo' },
+    'CON-07': { peso: 5,  tipo: 'directo' },
+    'CON-08': { peso: 5,  tipo: 'directo' },
+  },
+  planta: {
+    'PLA-01': { peso: 20, tipo: 'directo' },
+    'PLA-02': { peso: 30, tipo: 'binario_signo' },
+    'PLA-03': { peso: 0,  tipo: 'directo' },
+    'PLA-04': { peso: 10, tipo: 'directo' },
+    'PLA-05': { peso: 10, tipo: 'directo' },
+    'PLA-06': { peso: 30, tipo: 'directo' },
+  },
+  proyectos: {
+    'PRY-01': { peso: 20, tipo: 'directo' },
+    'PRY-02': { peso: 30, tipo: 'directo' },
+    'PRY-03': { peso: 30, tipo: 'directo' },
+    'PRY-04': { peso: 20, tipo: 'directo' },
+  },
+  compras: {
+    'CYL-01': { peso: 20, tipo: 'directo' },
+    'CYL-02': { peso: 30, tipo: 'binario_meta_minima', meta: 3 },
+    'CYL-03': { peso: 30, tipo: 'binario_meta_minima', meta: 3 },
+    'CYL-04': { peso: 20, tipo: 'directo' },
+  },
+};
+
+// Convierte el valor de un indicador a su "contribución" (0-100) según su tipo
+function contribucionIndicador(valor, config) {
+  if (valor === null || valor === undefined) return null;
+  if (config.tipo === 'binario_signo') {
+    return valor > 0 ? 100 : 0;
+  }
+  if (config.tipo === 'binario_meta_minima') {
+    return valor >= config.meta ? 100 : 0;
+  }
+  // directo: capado a [0, 100]
+  return Math.max(0, Math.min(valor, 100));
+}
+
+// Calcula el "general" ponderado de un área para un periodo dado
+// ('todos' = usar ind.valor más reciente; o un periodo "YYYY-MM" para histórico)
+function calcularGeneral(areaKey, indicadores, periodo) {
+  const pesos = PESOS[areaKey];
+  if (!pesos) return null;
+
+  let sumaPonderada = 0;
+  let sumaPesos = 0;
+
+  Object.entries(pesos).forEach(([id, config]) => {
+    if (config.peso === 0) return; // no pondera
+    const ind = indicadores.find(i => i.id === id);
+    if (!ind) return;
+    const valor = periodo === 'todos' ? ind.valor : (ind.historico[periodo] ?? null);
+    const contrib = contribucionIndicador(valor, config);
+    if (contrib === null) return;
+    sumaPonderada += contrib * config.peso;
+    sumaPesos += config.peso;
+  });
+
+  if (sumaPesos === 0) return null;
+  return sumaPonderada / sumaPesos; // promedio ponderado normalizado por si falta algún dato
+}
+
 // Datos cargados
 let DATOS = { construccion: [], planta: [], proyectos: [], compras: [] };
 
@@ -847,12 +924,7 @@ function renderResumen() {
   resumenEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
     const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
-    // PLA-02 (rentabilidad) excluida del promedio — se muestra solo como indicador
-    const candidatos = principales.filter(i => i.id !== 'PLA-02');
-    const vals = candidatos
-      .map(i => periodoSel === 'todos' ? i.valor : (i.historico[periodoSel] ?? null))
-      .filter(v => v !== null && v > 0);
-    const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null;
+    const promedio = calcularGeneral(a.key, inds, periodoSel);
     const meta = SHEETS[a.key]?.meta || 85;
     const sem = getSem(promedio, meta);
     const color = getColor(sem);
@@ -874,11 +946,7 @@ function renderResumen() {
   const tendEl = document.getElementById('tend-container');
   tendEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
-    const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
-    const vals = principales
-      .map(i => periodoSel === 'todos' ? i.valor : (i.historico[periodoSel] ?? null))
-      .filter(v => v !== null);
-    const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : 0;
+    const promedio = calcularGeneral(a.key, inds, periodoSel) ?? 0;
     const meta = SHEETS[a.key]?.meta || 85;
     const sem = getSem(promedio, meta);
     return `<div class="tendencia-row">
@@ -888,20 +956,17 @@ function renderResumen() {
     </div>`;
   }).join('');
 
-  // Histórico — Resumen General (promedio por área, por periodo)
+  // Histórico — Resumen General (general ponderado por área, por periodo)
   const periodosSet = new Set();
   areas.forEach(a => (DATOS[a.key]?.periodos || []).forEach(p => periodosSet.add(p)));
   const periodosResumen = Array.from(periodosSet).sort();
 
   const indicadoresResumen = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
-    const principales = inds
-      .filter(i => /^[A-Z]+-\d+$/.test(i.id))
-      .filter(i => i.id !== 'PLA-02'); // rentabilidad excluida del promedio
     const historico = {};
     periodosResumen.forEach(p => {
-      const vals = principales.map(i => i.historico[p]).filter(v => v !== undefined && v !== null);
-      if (vals.length) historico[p] = vals.reduce((s,v)=>s+v,0) / vals.length;
+      const g = calcularGeneral(a.key, inds, p);
+      if (g !== null) historico[p] = g;
     });
     const codigo = { construccion: 'CON', planta: 'PLA', proyectos: 'PRY', compras: 'CYL' }[a.key];
     return { id: codigo, nombre: a.label, historico };
