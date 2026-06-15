@@ -99,6 +99,16 @@
 
   /* RESUMEN */
   .resumen-areas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .desempeno-card { background: linear-gradient(135deg, #111827 0%, #1F2937 100%); color: white; border-radius: 16px; padding: 24px 28px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .desempeno-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #9CA3AF; margin-bottom: 8px; }
+  .desempeno-value { font-size: 48px; font-weight: 700; line-height: 1; }
+  .desempeno-sub { font-size: 12px; color: #9CA3AF; margin-top: 6px; }
+  .desempeno-right { display: flex; align-items: center; gap: 10px; }
+  .desempeno-breakdown { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+  .desempeno-mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .desempeno-mini-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .desempeno-mini-value { font-size: 28px; font-weight: 700; }
+  .desempeno-mini-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
   .area-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; transition: all 0.15s; }
   .area-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
   .area-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
@@ -120,20 +130,19 @@
   .login-card { background: white; border-radius: 20px; padding: 40px; width: 380px; text-align: center; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
   .login-logo { width: 56px; height: 56px; background: var(--blue); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: white; margin: 0 auto 20px; }
   .login-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
-  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px 20px; border: 1.5px solid var(--border); border-radius: 10px; background: white; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; color: var(--text); }
-  .google-btn:hover { background: var(--surface2); border-color: #9CA3AF; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .google-icon { width: 20px; height: 20px; }
-  .login-footer { font-size: 11px; color: var(--text3); margin-top: 20px; }
+  .login-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+  .login-footer { font-size: 11px; color: var(--text3); margin-top: 16px; }
   .login-error { background: #FEE2E2; color: #DC2626; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; display: none; }
   .user-info { display: flex; align-items: center; gap: 8px; }
   .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #374151; }
   .user-name { font-size: 12px; color: #E5E7EB; }
   .logout-btn { background: transparent; border: 1px solid #374151; color: #9CA3AF; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
   .logout-btn:hover { border-color: #6B7280; color: #E5E7EB; }
-  .access-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-top: 8px; }
-  .access-admin { background: #DBEAFE; color: #1D4ED8; }
-  .access-gerente { background: #D1FAE5; color: #065F46; }
+  .login-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text); background: var(--surface2); margin-bottom: 12px; transition: border-color 0.15s; box-sizing: border-box; }
+  .login-input:focus { outline: none; border-color: var(--blue); background: white; }
+  .login-btn { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .login-btn:hover { background: #1D4ED8; }
+  .login-btn:disabled { background: var(--text3); cursor: not-allowed; }
 
 
   /* SELECTOR DE MESES EN HISTÓRICO */
@@ -162,17 +171,11 @@
   <div class="login-card">
     <div class="login-logo">MC</div>
     <div class="login-title">Dashboard de Indicadores</div>
-    <div class="login-sub">Dirección de Operaciones · Mejora Continua<br>Inicia sesión con tu cuenta corporativa</div>
+    <div class="login-sub">Dirección de Operaciones · Mejora Continua</div>
     <div class="login-error" id="login-error"></div>
-    <button class="google-btn" onclick="iniciarSesionGoogle()">
-      <svg class="google-icon" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      </svg>
-      Iniciar sesión con Google
-    </button>
+    <input class="login-input" type="email" id="login-email" placeholder="correo@multyconstrucciones.com.mx" autocomplete="username">
+    <input class="login-input" type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') iniciarSesion()">
+    <button class="login-btn" id="login-btn" onclick="iniciarSesion()">Iniciar sesión</button>
     <div class="login-footer">Solo usuarios @multyconstrucciones.com.mx</div>
   </div>
 </div>
@@ -196,10 +199,7 @@
     <div class="periodo-badge" id="periodo-badge">Cargando...</div>
     <button class="refresh-btn" onclick="cargarTodo()">↻ Actualizar</button>
     <div class="user-info" id="user-info" style="display:none;">
-      <img class="user-avatar" id="user-avatar" src="" alt="">
-      <div>
-        <div class="user-name" id="user-name"></div>
-      </div>
+      <div class="user-name" id="user-name"></div>
       <button class="logout-btn" onclick="cerrarSesion()">Salir</button>
     </div>
   </div>
@@ -219,12 +219,52 @@
 
   <!-- RESUMEN -->
   <div class="page active" id="page-resumen">
+    <div class="periodo-selector" id="selector-resumen">
+      <label>📅 Periodo:</label>
+      <select class="periodo-select" id="select-resumen" onchange="filtrarPeriodo('resumen')">
+        <option value="todos">Más reciente</option>
+      </select>
+      <button class="periodo-all-btn active" id="btn-todos-resumen" onclick="mostrarTodos('resumen')">Más reciente</button>
+      <span class="periodo-info" id="info-resumen"></span>
+    </div>
+    <div class="desempeno-card">
+      <div>
+        <div class="desempeno-label">Panorama Global</div>
+        <div class="desempeno-value" id="desempeno-valor">—</div>
+        <div class="desempeno-sub" id="desempeno-sub"></div>
+      </div>
+      <div class="desempeno-right">
+        <div class="semaforo" id="desempeno-sem" style="width:18px;height:18px;"></div>
+      </div>
+    </div>
+    <div class="desempeno-breakdown">
+      <div class="desempeno-mini-card">
+        <div>
+          <div class="desempeno-mini-label">⚙️ Desempeño Operativo (50%)</div>
+          <div class="desempeno-mini-sub">Promedio de Construcción, Planta/Taller, Proyectos y Compras y Logística</div>
+        </div>
+        <div class="desempeno-mini-value" id="operativo-valor">—</div>
+      </div>
+      <div class="desempeno-mini-card">
+        <div>
+          <div class="desempeno-mini-label">💰 Desempeño Financiero (50%)</div>
+          <div class="desempeno-mini-sub" id="financiero-sub">Utilidad bruta proyectada y costo directo</div>
+        </div>
+        <div class="desempeno-mini-value" id="financiero-valor">—</div>
+      </div>
+    </div>
     <div class="resumen-areas" id="resumen-areas">
       <div class="empty-state"><div class="icon">⏳</div>Cargando áreas...</div>
     </div>
     <div class="historico-card">
       <div class="historico-title">Promedio por área — últimos registros</div>
       <div id="tend-container"></div>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">Histórico — Resumen General</div>
+      <div class="meses-selector" id="meses-resumen"></div>
+      <div class="chart-container" id="chart-resumen"></div>
+      <div class="chart-legend" id="legend-resumen"></div>
     </div>
   </div>
 
@@ -391,6 +431,14 @@ const SHEETS = {
     color: 'var(--cyl)',
     icon: '📦',
     meta: 85
+  },
+  financiero: {
+    id: '1yy7rG5RHO2d6tyXhpq9SHzm-LyVJ3RKNKfd0r8bq4ws',
+    hoja: 'Datos',
+    area: 'Financiero',
+    color: 'var(--text)',
+    icon: '💰',
+    meta: 85
   }
 };
 
@@ -405,8 +453,110 @@ const COLORES_IND = {
   'CYL-01':'#0891B2','CYL-02':'#2563EB','CYL-03':'#D97706','CYL-04':'#059669'
 };
 
+// ═══════════════════════════════════════════════════
+// PESOS PARA EL "GENERAL" PONDERADO DE CADA ÁREA
+// tipo: 'directo' (valor 0-100% capado a 100),
+//       'binario_meta_minima' (valor >= meta → 100%, si no → 0%),
+//       'binario_signo' (valor > 0 → 100%, si no → 0%)
+// peso: 0 = no pondera (se excluye del cálculo del general)
+// ═══════════════════════════════════════════════════
+const PESOS = {
+  construccion: {
+    'CON-01': { peso: 20, tipo: 'directo' },
+    'CON-02': { peso: 20, tipo: 'directo' },
+    'CON-03': { peso: 0,  tipo: 'directo' },
+    'CON-04': { peso: 20, tipo: 'directo' },
+    'CON-05': { peso: 20, tipo: 'directo' },
+    'CON-06': { peso: 10, tipo: 'directo' },
+    'CON-07': { peso: 5,  tipo: 'directo' },
+    'CON-08': { peso: 5,  tipo: 'directo' },
+  },
+  planta: {
+    'PLA-01': { peso: 20, tipo: 'directo' },
+    'PLA-02': { peso: 30, tipo: 'binario_signo' },
+    'PLA-03': { peso: 0,  tipo: 'directo' },
+    'PLA-04': { peso: 10, tipo: 'directo' },
+    'PLA-05': { peso: 10, tipo: 'directo' },
+    'PLA-06': { peso: 30, tipo: 'directo' },
+  },
+  proyectos: {
+    'PRY-01': { peso: 20, tipo: 'directo' },
+    'PRY-02': { peso: 30, tipo: 'directo' },
+    'PRY-03': { peso: 30, tipo: 'directo' },
+    'PRY-04': { peso: 20, tipo: 'directo' },
+  },
+  compras: {
+    'CYL-01': { peso: 20, tipo: 'directo' },
+    'CYL-02': { peso: 30, tipo: 'binario_meta_minima', meta: 3 },
+    'CYL-03': { peso: 30, tipo: 'binario_meta_minima', meta: 3 },
+    'CYL-04': { peso: 20, tipo: 'directo' },
+  },
+  financiero: {
+    'FIN-01': { peso: 50, tipo: 'directo' }, // Utilidad bruta proyectada — cumplimiento (capada a [0,100])
+    'FIN-02': { peso: 50, tipo: 'tramos', tramos: [
+      { hasta: 80, valor: 100 }, // costo directo < 80%   → 100%
+      { hasta: 82, valor: 80  }, // 80% <= costo < 82%    → 80%
+      { hasta: 84, valor: 50  }, // 82% <= costo < 84%    → 50%
+      { hasta: Infinity, valor: 0 } // costo directo >= 84% → 0%
+    ]},
+  },
+};
+
+// Convierte el valor de un indicador a su "contribución" (0-100) según su tipo
+function contribucionIndicador(valor, config) {
+  if (valor === null || valor === undefined) return null;
+  if (config.tipo === 'binario_signo') {
+    return valor > 0 ? 100 : 0;
+  }
+  if (config.tipo === 'binario_meta_minima') {
+    return valor >= config.meta ? 100 : 0;
+  }
+  if (config.tipo === 'tramos') {
+    // config.tramos: lista ordenada de { hasta, valor }. Se usa el primer
+    // tramo cuyo límite superior ("hasta") sea mayor o igual que el valor real.
+    for (const tramo of config.tramos) {
+      if (valor <= tramo.hasta) return tramo.valor;
+    }
+    return config.tramos[config.tramos.length - 1].valor;
+  }
+  // directo: capado a [0, 100]
+  return Math.max(0, Math.min(valor, 100));
+}
+
+// Resta un mes a un periodo "YYYY-MM" (ej. "2026-06" → "2026-05")
+function mesAnterior(periodoYYYYMM) {
+  const [y, m] = periodoYYYYMM.split('-').map(Number);
+  let year = y, month = m - 1;
+  if (month === 0) { month = 12; year -= 1; }
+  return year + '-' + String(month).padStart(2, '0');
+}
+
+// Calcula el "general" ponderado de un área para un periodo dado
+// ('todos' = usar ind.valor más reciente; o un periodo "YYYY-MM" para histórico)
+function calcularGeneral(areaKey, indicadores, periodo) {
+  const pesos = PESOS[areaKey];
+  if (!pesos) return null;
+
+  let sumaPonderada = 0;
+  let sumaPesos = 0;
+
+  Object.entries(pesos).forEach(([id, config]) => {
+    if (config.peso === 0) return; // no pondera
+    const ind = indicadores.find(i => i.id === id);
+    if (!ind) return;
+    const valor = periodo === 'todos' ? ind.valor : (ind.historico[periodo] ?? null);
+    const contrib = contribucionIndicador(valor, config);
+    if (contrib === null) return;
+    sumaPonderada += contrib * config.peso;
+    sumaPesos += config.peso;
+  });
+
+  if (sumaPesos === 0) return null;
+  return sumaPonderada / sumaPesos; // promedio ponderado normalizado por si falta algún dato
+}
+
 // Datos cargados
-let DATOS = { construccion: [], planta: [], proyectos: [], compras: [] };
+let DATOS = { construccion: [], planta: [], proyectos: [], compras: [], financiero: [] };
 
 // ═══════════════════════════════════════════════════
 // CARGA DE DATOS DESDE GOOGLE SHEETS (CSV público)
@@ -721,15 +871,15 @@ function toggleMesHistorico(area, periodo) {
   renderMesesSelector(area, periodosDisponibles);
   const gridId = 'chart-' + area;
   const legendId = 'legend-' + area;
-  renderChart(gridId, legendId, DATOS[area]?.indicadores || [], mesesHistorico[area]);
+  renderChart(gridId, legendId, DATOS[area]?.indicadores || [], mesesHistorico[area], area !== 'resumen');
 }
 
-function renderChart(containerId, legendId, indicadores, periodos) {
+function renderChart(containerId, legendId, indicadores, periodos, requierePatronId = true) {
   const container = document.getElementById(containerId);
   const legend = document.getElementById(legendId);
   if (!container) return;
 
-  const principales = indicadores.filter(i => /^[A-Z]+-\d+$/.test(i.id) && Object.keys(i.historico).length > 0);
+  const principales = indicadores.filter(i => (!requierePatronId || /^[A-Z]+-\d+$/.test(i.id)) && Object.keys(i.historico).length > 0);
 
   if (!principales.length) {
     container.innerHTML = '<div class="empty-state">Sin datos históricos aún</div>';
@@ -827,20 +977,75 @@ function renderResumen() {
     { key: 'compras',      label: 'Compras y Logística', icon: '📦', color: 'var(--cyl)', colorBg: 'var(--cyl-bg)', page: 'compras', navIdx: 4 },
   ];
 
+  const periodoSel = periodoSeleccionado.resumen;
+  const periodoOperativo = periodoSel === 'todos' ? (DATOS.construccion?.ultimoPeriodo || '') : periodoSel;
+  const periodoMostrado = periodoOperativo;
+
+  // Desempeño Operativo — promedio simple de los generales ponderados de las 4 áreas
+  const generalesPorArea = areas.map(a => calcularGeneral(a.key, DATOS[a.key]?.indicadores || [], periodoSel));
+  const generalesValidos = generalesPorArea.filter(v => v !== null);
+  const desempenoOperativo = generalesValidos.length
+    ? generalesValidos.reduce((s,v)=>s+v,0) / generalesValidos.length
+    : null;
+
+  // Desempeño Financiero — los cierres financieros van un mes detrás del operativo.
+  // Se usa el último periodo financiero disponible que sea <= al periodo operativo
+  // mostrado (ej. en junio se muestra el cierre de mayo, ya disponible).
+  const indsFinanciero = DATOS.financiero?.indicadores || [];
+  const periodosFin = DATOS.financiero?.periodos || [];
+  let periodoFinanciero = null;
+  if (periodosFin.length) {
+    const candidatos = periodosFin.filter(p => p <= periodoOperativo);
+    periodoFinanciero = candidatos.length ? candidatos[candidatos.length - 1] : periodosFin[periodosFin.length - 1];
+  }
+  const desempenoFinanciero = periodoFinanciero
+    ? calcularGeneral('financiero', indsFinanciero, periodoFinanciero)
+    : null;
+  const hayDatosFinancieros = desempenoFinanciero !== null;
+
+  // El resultado financiero etiquetado en "periodoFinanciero" corresponde
+  // al cierre del mes ANTERIOR (ej. etiquetado 2026-06 → cierre real 2026-05)
+  const mesCierreFinanciero = periodoFinanciero ? mesAnterior(periodoFinanciero) : null;
+
+  // Panorama Global — 50% Operativo + 50% Financiero (si no hay datos financieros, solo Operativo)
+  let panoramaGlobal;
+  if (desempenoOperativo !== null && desempenoFinanciero !== null) {
+    panoramaGlobal = 0.5 * desempenoOperativo + 0.5 * desempenoFinanciero;
+  } else {
+    panoramaGlobal = desempenoOperativo;
+  }
+
+  const desempenoMeta = 85;
+  const desempenoSem = getSem(panoramaGlobal, desempenoMeta);
+
+  document.getElementById('desempeno-valor').textContent =
+    panoramaGlobal !== null ? panoramaGlobal.toFixed(1) + '%' : '—';
+  document.getElementById('desempeno-sub').textContent = hayDatosFinancieros
+    ? `50% Operativo (${periodoOperativo}) + 50% Cierre financiero - ${mesCierreFinanciero}`
+    : `Desempeño Operativo (sin datos financieros aún) · ${periodoMostrado}`;
+  const semEl = document.getElementById('desempeno-sem');
+  semEl.classList.remove('sem-green','sem-yellow','sem-red');
+  semEl.classList.add('sem-' + desempenoSem);
+
+  // Tarjetas de desglose
+  document.getElementById('operativo-valor').textContent =
+    desempenoOperativo !== null ? desempenoOperativo.toFixed(1) + '%' : '—';
+  document.getElementById('financiero-valor').textContent =
+    desempenoFinanciero !== null ? desempenoFinanciero.toFixed(1) + '%' : '—';
+  document.getElementById('financiero-sub').textContent = hayDatosFinancieros
+    ? 'Cierre financiero - ' + mesCierreFinanciero
+    : 'Pendiente: conectar hoja "Financiero" en SHEETS.financiero.id';
+
   const resumenEl = document.getElementById('resumen-areas');
   resumenEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
     const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
-    // PLA-02 (rentabilidad) excluida del promedio — se muestra solo como indicador
-    const vals = principales
-      .filter(i => i.id !== 'PLA-02')
-      .map(i => i.valor).filter(v => v !== null && v > 0);
-    const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null;
+    const promedio = calcularGeneral(a.key, inds, periodoSel);
     const meta = SHEETS[a.key]?.meta || 85;
     const sem = getSem(promedio, meta);
     const color = getColor(sem);
     const valStr = promedio !== null ? promedio.toFixed(1) + '%' : '—';
-    const periodo = inds[0]?.ultimoPeriodo || '';
+    const periodo = periodoSel === 'todos' ? (inds[0]?.ultimoPeriodo || '') : periodoSel;
 
     return `<div class="area-card" onclick="showPage('${a.page}', document.querySelectorAll('.nav-tab')[${a.navIdx}])">
       <div class="area-card-top">
@@ -857,9 +1062,7 @@ function renderResumen() {
   const tendEl = document.getElementById('tend-container');
   tendEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
-    const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
-    const vals = principales.map(i => i.valor).filter(v => v !== null);
-    const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : 0;
+    const promedio = calcularGeneral(a.key, inds, periodoSel) ?? 0;
     const meta = SHEETS[a.key]?.meta || 85;
     const sem = getSem(promedio, meta);
     return `<div class="tendencia-row">
@@ -868,7 +1071,28 @@ function renderResumen() {
       <div class="tend-val">${promedio > 0 ? promedio.toFixed(1)+'%' : '—'}</div>
     </div>`;
   }).join('');
+
+  // Histórico — Resumen General (general ponderado por área, por periodo)
+  const periodosSet = new Set();
+  areas.forEach(a => (DATOS[a.key]?.periodos || []).forEach(p => periodosSet.add(p)));
+  const periodosResumen = Array.from(periodosSet).sort();
+
+  const indicadoresResumen = areas.map(a => {
+    const inds = DATOS[a.key]?.indicadores || [];
+    const historico = {};
+    periodosResumen.forEach(p => {
+      const g = calcularGeneral(a.key, inds, p);
+      if (g !== null) historico[p] = g;
+    });
+    const codigo = { construccion: 'CON', planta: 'PLA', proyectos: 'PRY', compras: 'CYL' }[a.key];
+    return { id: codigo, nombre: a.label, historico };
+  });
+
+  DATOS.resumen = { indicadores: indicadoresResumen, periodos: periodosResumen };
+  renderMesesSelector('resumen', periodosResumen);
+  renderChart('chart-resumen', 'legend-resumen', indicadoresResumen, mesesHistorico.resumen, false);
 }
+
 
 // ═══════════════════════════════════════════════════
 // CARGA PRINCIPAL
@@ -878,17 +1102,19 @@ async function cargarTodo() {
   document.getElementById('error-banner').style.display = 'none';
 
   try {
-    const [rowsCon, rowsPla, rowsPry, rowsCyl] = await Promise.all([
+    const [rowsCon, rowsPla, rowsPry, rowsCyl, rowsFin] = await Promise.all([
       fetchSheet(SHEETS.construccion.id, SHEETS.construccion.hoja),
       fetchSheet(SHEETS.planta.id,       SHEETS.planta.hoja),
       fetchSheet(SHEETS.proyectos.id,    SHEETS.proyectos.hoja),
       fetchSheet(SHEETS.compras.id,      SHEETS.compras.hoja),
+      SHEETS.financiero.id ? fetchSheet(SHEETS.financiero.id, SHEETS.financiero.hoja) : Promise.resolve([]),
     ]);
 
     DATOS.construccion = procesarDatos(rowsCon);
     DATOS.planta       = procesarDatos(rowsPla);
     DATOS.proyectos    = procesarDatos(rowsPry);
     DATOS.compras      = procesarDatos(rowsCyl);
+    DATOS.financiero   = procesarDatos(rowsFin);
 
     // Periodo badge
     const periodo = DATOS.construccion.ultimoPeriodo ||
@@ -944,8 +1170,8 @@ function showPage(pageId, tab) {
 // ═══════════════════════════════════════════════════
 // FILTRO DE PERIODO
 // ═══════════════════════════════════════════════════
-let periodoSeleccionado = { construccion: 'todos', planta: 'todos', proyectos: 'todos', compras: 'todos' };
-let mesesHistorico = { construccion: [], planta: [], proyectos: [], compras: [] }; // periodos seleccionados para el gráfico
+let periodoSeleccionado = { construccion: 'todos', planta: 'todos', proyectos: 'todos', compras: 'todos', resumen: 'todos' };
+let mesesHistorico = { construccion: [], planta: [], proyectos: [], compras: [], resumen: [] }; // periodos seleccionados para el gráfico
 
 function llenarSelectores() {
   ['construccion', 'planta', 'proyectos', 'compras'].forEach(area => {
@@ -969,6 +1195,21 @@ function llenarSelectores() {
       filtrarPeriodo(area);
     }
   });
+
+  // Selector de Resumen General — el dropdown permite ver un mes específico,
+  // pero por defecto se queda en "Más reciente" (no se auto-selecciona un periodo)
+  const selResumen = document.getElementById('select-resumen');
+  if (selResumen) {
+    const periodosResumen = DATOS.resumen?.periodos || [];
+    while (selResumen.options.length > 1) selResumen.remove(1);
+    [...periodosResumen].reverse().forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      selResumen.appendChild(opt);
+    });
+    selResumen.value = periodoSeleccionado.resumen;
+  }
 }
 
 function filtrarPeriodo(area) {
@@ -978,6 +1219,18 @@ function filtrarPeriodo(area) {
 
   const btnTodos = document.getElementById('btn-todos-' + area);
   const info = document.getElementById('info-' + area);
+
+  if (area === 'resumen') {
+    if (periodo === 'todos') {
+      btnTodos.classList.add('active');
+      if (info) info.textContent = 'Mostrando el periodo más reciente';
+    } else {
+      btnTodos.classList.remove('active');
+      if (info) info.textContent = 'Periodo: ' + periodo;
+    }
+    renderResumen();
+    return;
+  }
 
   if (periodo === 'todos') {
     btnTodos.classList.add('active');
@@ -1017,71 +1270,56 @@ function mostrarTodos(area) {
 
 
 // ═══════════════════════════════════════════════════
-// CONTROL DE ACCESO — USUARIOS AUTORIZADOS
+// CONTROL DE ACCESO — USUARIOS DESDE GOOGLE SHEETS
 // ═══════════════════════════════════════════════════
-const USUARIOS = {
-  // ADMIN — ven todo
-  'mmendoza@multyconstrucciones.com.mx':       { nombre: 'Maria Lizzet', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  'lcastilla@multyconstrucciones.com.mx':      { nombre: 'Luis Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  'acastilla@multyconstrucciones.com.mx':      { nombre: 'A. Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  'angela.castilla@multyconstrucciones.com.mx':{ nombre: 'Angela Castilla', rol: 'Admin', areas: ['resumen','construccion','planta','proyectos','compras'] },
-  // CONSTRUCCIÓN
-  'hmanjarrez@multyconstrucciones.com.mx':     { nombre: 'H. Manjarrez', rol: 'Gerente', areas: ['construccion'] },
-  'osoto@multyconstrucciones.com.mx':          { nombre: 'Oscar Soto', rol: 'Coordinador', areas: ['construccion'] },
-  'lreyes@multyconstrucciones.com.mx':         { nombre: 'Luis Reyes', rol: 'Coordinador', areas: ['construccion'] },
-  // PROYECTOS
-  'dalmaral@multyconstrucciones.com.mx':       { nombre: 'D. Almaral', rol: 'Gerente', areas: ['proyectos'] },
-  'abenitez@multyconstrucciones.com.mx':       { nombre: 'A. Benítez', rol: 'Gerente', areas: ['proyectos'] },
-  // PLANTA
-  'mverdugo@multyconstrucciones.com.mx':       { nombre: 'M. Verdugo', rol: 'Gerente', areas: ['planta'] },
-  'hponce@multyconstrucciones.com.mx':         { nombre: 'Héctor Ponce', rol: 'Gerente', areas: ['planta'] },
-  // COMPRAS Y LOGÍSTICA
-  'mbarrientos@multyconstrucciones.com.mx':    { nombre: 'M. Graciela Barrientos', rol: 'Gerente', areas: ['compras'] },
-};
-
 let usuarioActual = null;
-let googleAuth = null;
+let USUARIOS_SHEETS = []; // se carga desde la pestaña "Usuarios" de la hoja Financiero
 
-function iniciarSesionGoogle() {
-  // Usar Google Identity Services
-  google.accounts.id.initialize({
-    client_id: '368143701722-placeholder.apps.googleusercontent.com',
-    callback: handleCredentialResponse,
-    auto_select: false,
-  });
-  google.accounts.id.prompt();
+async function cargarUsuarios() {
+  try {
+    const rows = await fetchSheet(SHEETS.financiero.id, 'Usuarios');
+    USUARIOS_SHEETS = rows.map(r => ({
+      correo:   (r['correo']   || r['Correo']   || '').trim().toLowerCase(),
+      nombre:   (r['nombre']   || r['Nombre']   || '').trim(),
+      rol:      (r['rol']      || r['Rol']       || '').trim(),
+      areas:    (r['areas']    || r['Areas']     || '').trim().split(',').map(a => a.trim()).filter(Boolean),
+      password: (r['password'] || r['Password'] || '').trim(),
+    })).filter(u => u.correo);
+  } catch(e) {
+    console.warn('No se pudo cargar la lista de usuarios:', e.message);
+  }
 }
 
-function handleCredentialResponse(response) {
-  // Decodificar JWT token de Google
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
-  const email = payload.email;
-  const nombre = payload.name;
-  const foto = payload.picture;
+function iniciarSesion() {
+  const email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+  const pass  = (document.getElementById('login-password').value || '').trim();
 
-  // Verificar dominio
+  if (!email || !pass) {
+    mostrarErrorLogin('Ingresa tu correo y contraseña.');
+    return;
+  }
   if (!email.endsWith('@multyconstrucciones.com.mx')) {
     mostrarErrorLogin('Acceso restringido a cuentas @multyconstrucciones.com.mx');
     return;
   }
 
-  // Verificar usuario autorizado
-  const usuario = USUARIOS[email];
+  const usuario = USUARIOS_SHEETS.find(u => u.correo === email);
   if (!usuario) {
-    mostrarErrorLogin('Tu cuenta no tiene acceso asignado. Contacta a administración.');
+    mostrarErrorLogin('Correo no registrado. Contacta a administración.');
+    return;
+  }
+  if (usuario.password !== pass) {
+    mostrarErrorLogin('Contraseña incorrecta.');
     return;
   }
 
-  // Login exitoso
-  usuarioActual = { ...usuario, email, foto };
+  usuarioActual = { ...usuario, email, foto: '' };
   guardarSesion();
   completarLogin();
 }
 
 function guardarSesion() {
-  try {
-    sessionStorage.setItem('mc_usuario', JSON.stringify(usuarioActual));
-  } catch (e) {}
+  try { sessionStorage.setItem('mc_usuario', JSON.stringify(usuarioActual)); } catch(e) {}
 }
 
 function restaurarSesion() {
@@ -1092,42 +1330,28 @@ function restaurarSesion() {
       completarLogin();
       return true;
     }
-  } catch (e) {}
+  } catch(e) {}
   return false;
 }
 
 function completarLogin() {
-  // Ocultar overlay de login
   document.getElementById('login-overlay').style.display = 'none';
 
-  // Mostrar info de usuario en header
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
-  const userAvatar = document.getElementById('user-avatar');
   userInfo.style.display = 'flex';
   userName.textContent = usuarioActual.nombre;
-  if (userAvatar && usuarioActual.foto) userAvatar.src = usuarioActual.foto;
 
-  // Mostrar/ocultar pestañas según acceso
   const tabs = document.querySelectorAll('.nav-tab');
   const pageIds = ['resumen', 'construccion', 'planta', 'proyectos', 'compras'];
   tabs.forEach((tab, i) => {
-    const pageId = pageIds[i];
-    if (usuarioActual.areas.includes(pageId)) {
-      tab.style.display = '';
-    } else {
-      tab.style.display = 'none';
-    }
+    tab.style.display = usuarioActual.areas.includes(pageIds[i]) ? '' : 'none';
   });
 
-  // Navegar a la primera área permitida
   const primeraArea = usuarioActual.areas[0];
   const tabIdx = pageIds.indexOf(primeraArea);
-  if (tabIdx >= 0) {
-    showPage(primeraArea, document.querySelectorAll('.nav-tab')[tabIdx]);
-  }
+  if (tabIdx >= 0) showPage(primeraArea, document.querySelectorAll('.nav-tab')[tabIdx]);
 
-  // Cargar datos
   cargarTodo();
 }
 
@@ -1139,39 +1363,21 @@ function mostrarErrorLogin(msg) {
 
 function cerrarSesion() {
   usuarioActual = null;
-  try { sessionStorage.removeItem('mc_usuario'); } catch (e) {}
+  try { sessionStorage.removeItem('mc_usuario'); } catch(e) {}
   document.getElementById('login-overlay').style.display = 'flex';
   document.getElementById('user-info').style.display = 'none';
   document.getElementById('login-error').style.display = 'none';
-  if (typeof google !== 'undefined') {
-    google.accounts.id.disableAutoSelect();
-  }
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
 }
 
-// Para desarrollo/demo: login simulado con prompt
-function iniciarSesionGoogle() {
-  const email = prompt('Ingresa tu correo corporativo (@multyconstrucciones.com.mx):');
-  if (!email) return;
-
-  if (!email.endsWith('@multyconstrucciones.com.mx')) {
-    mostrarErrorLogin('Acceso restringido a cuentas @multyconstrucciones.com.mx');
-    return;
+// INIT — cargar usuarios y restaurar sesión si existe
+cargarUsuarios().then(() => {
+  if (!restaurarSesion()) {
+    // Mostrar login — ya visible por defecto
   }
+});
 
-  const usuario = USUARIOS[email.toLowerCase()];
-  if (!usuario) {
-    mostrarErrorLogin('Tu cuenta no tiene acceso asignado. Contacta a administración.');
-    return;
-  }
-
-  usuarioActual = { ...usuario, email, foto: '' };
-  guardarSesion();
-  completarLogin();
-}
-
-
-// INIT — restaurar sesión si existe, si no esperar login
-restaurarSesion();
 
 </script>
 </body>
