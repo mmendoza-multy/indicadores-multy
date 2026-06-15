@@ -226,6 +226,12 @@
       <div class="historico-title">Promedio por área — últimos registros</div>
       <div id="tend-container"></div>
     </div>
+    <div class="historico-card">
+      <div class="historico-title">Histórico — Resumen General</div>
+      <div class="meses-selector" id="meses-resumen"></div>
+      <div class="chart-container" id="chart-resumen"></div>
+      <div class="chart-legend" id="legend-resumen"></div>
+    </div>
   </div>
 
   <!-- CONSTRUCCIÓN -->
@@ -721,15 +727,15 @@ function toggleMesHistorico(area, periodo) {
   renderMesesSelector(area, periodosDisponibles);
   const gridId = 'chart-' + area;
   const legendId = 'legend-' + area;
-  renderChart(gridId, legendId, DATOS[area]?.indicadores || [], mesesHistorico[area]);
+  renderChart(gridId, legendId, DATOS[area]?.indicadores || [], mesesHistorico[area], area !== 'resumen');
 }
 
-function renderChart(containerId, legendId, indicadores, periodos) {
+function renderChart(containerId, legendId, indicadores, periodos, requierePatronId = true) {
   const container = document.getElementById(containerId);
   const legend = document.getElementById(legendId);
   if (!container) return;
 
-  const principales = indicadores.filter(i => /^[A-Z]+-\d+$/.test(i.id) && Object.keys(i.historico).length > 0);
+  const principales = indicadores.filter(i => (!requierePatronId || /^[A-Z]+-\d+$/.test(i.id)) && Object.keys(i.historico).length > 0);
 
   if (!principales.length) {
     container.innerHTML = '<div class="empty-state">Sin datos históricos aún</div>';
@@ -868,7 +874,31 @@ function renderResumen() {
       <div class="tend-val">${promedio > 0 ? promedio.toFixed(1)+'%' : '—'}</div>
     </div>`;
   }).join('');
+
+  // Histórico — Resumen General (promedio por área, por periodo)
+  const periodosSet = new Set();
+  areas.forEach(a => (DATOS[a.key]?.periodos || []).forEach(p => periodosSet.add(p)));
+  const periodosResumen = Array.from(periodosSet).sort();
+
+  const indicadoresResumen = areas.map(a => {
+    const inds = DATOS[a.key]?.indicadores || [];
+    const principales = inds
+      .filter(i => /^[A-Z]+-\d+$/.test(i.id))
+      .filter(i => i.id !== 'PLA-02'); // rentabilidad excluida del promedio
+    const historico = {};
+    periodosResumen.forEach(p => {
+      const vals = principales.map(i => i.historico[p]).filter(v => v !== undefined && v !== null);
+      if (vals.length) historico[p] = vals.reduce((s,v)=>s+v,0) / vals.length;
+    });
+    const codigo = { construccion: 'CON', planta: 'PLA', proyectos: 'PRY', compras: 'CYL' }[a.key];
+    return { id: codigo, nombre: a.label, historico };
+  });
+
+  DATOS.resumen = { indicadores: indicadoresResumen, periodos: periodosResumen };
+  renderMesesSelector('resumen', periodosResumen);
+  renderChart('chart-resumen', 'legend-resumen', indicadoresResumen, mesesHistorico.resumen, false);
 }
+
 
 // ═══════════════════════════════════════════════════
 // CARGA PRINCIPAL
@@ -945,7 +975,7 @@ function showPage(pageId, tab) {
 // FILTRO DE PERIODO
 // ═══════════════════════════════════════════════════
 let periodoSeleccionado = { construccion: 'todos', planta: 'todos', proyectos: 'todos', compras: 'todos' };
-let mesesHistorico = { construccion: [], planta: [], proyectos: [], compras: [] }; // periodos seleccionados para el gráfico
+let mesesHistorico = { construccion: [], planta: [], proyectos: [], compras: [], resumen: [] }; // periodos seleccionados para el gráfico
 
 function llenarSelectores() {
   ['construccion', 'planta', 'proyectos', 'compras'].forEach(area => {
