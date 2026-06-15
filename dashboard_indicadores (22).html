@@ -406,7 +406,7 @@ const SHEETS = {
     area: 'Construcción',
     color: 'var(--con)',
     icon: '🏗️',
-    meta: 85
+    meta: 90
   },
   planta: {
     id: '1_efV1_LGAKF8hpcNWt0FDWSZUOMPMDX088io1QOR8YU',
@@ -414,7 +414,7 @@ const SHEETS = {
     area: 'Planta',
     color: 'var(--pla)',
     icon: '🏭',
-    meta: 85
+    meta: 90
   },
   proyectos: {
     id: '1jLFcPVLIrhT3MSZjLXLxkXpmebVNQozZmGgCX03eFsI',
@@ -422,7 +422,7 @@ const SHEETS = {
     area: 'Proyectos',
     color: 'var(--pry)',
     icon: '📐',
-    meta: 85
+    meta: 90
   },
   compras: {
     id: '1L3pLaTe0yz9pobuMGEhNap6GTZZPlsJbjew3JRF_R6Q',
@@ -430,7 +430,7 @@ const SHEETS = {
     area: 'Compras y Logística',
     color: 'var(--cyl)',
     icon: '📦',
-    meta: 85
+    meta: 90
   },
   financiero: {
     id: '1yy7rG5RHO2d6tyXhpq9SHzm-LyVJ3RKNKfd0r8bq4ws',
@@ -438,7 +438,7 @@ const SHEETS = {
     area: 'Financiero',
     color: 'var(--text)',
     icon: '💰',
-    meta: 85
+    meta: 90
   }
 };
 
@@ -711,11 +711,28 @@ function procesarDatos(rows) {
 function getSem(valor, meta) {
   if (valor === null) return 'yellow';
   if (valor >= meta) return 'green';
-  if (valor >= meta * 0.9) return 'yellow';
+  if (valor >= meta * 0.9) return 'yellow'; // banda amarilla: ≥81% cuando meta=90%
   return 'red';
 }
 function getColor(sem) {
   return sem==='green' ? 'var(--green)' : sem==='yellow' ? 'var(--yellow)' : 'var(--red)';
+}
+
+// Semáforo específico por indicador (casos especiales)
+function getSemIndicador(id, val, meta) {
+  if (id === 'PLA-02') {
+    return val > 0 ? 'green' : val === 0 ? 'yellow' : 'red';
+  }
+  if (id === 'CYL-02' || id === 'CYL-03') {
+    return val >= 3 ? 'green' : 'red';
+  }
+  if (id === 'FIN-02') {
+    // Semáforo directo sobre el % real de costo directo
+    if (val <= 80) return 'green';
+    if (val <= 84) return 'yellow';
+    return 'red';
+  }
+  return getSem(val, meta);
 }
 
 // ═══════════════════════════════════════════════════
@@ -735,16 +752,7 @@ function renderScorecards(containerId, indicadores, area, meta, detalleArea) {
     const val = ind.valor;
     const valStr = val !== null ? val.toFixed(1) + '%' : '—';
     // Semáforos especiales por indicador
-    let sem;
-    if (ind.id === 'PLA-02') {
-      // Rentabilidad: verde si positivo, rojo si negativo
-      sem = val > 0 ? 'green' : val === 0 ? 'yellow' : 'red';
-    } else if (ind.id === 'CYL-02' || ind.id === 'CYL-03') {
-      // Eficiencia: verde si >= 3%, rojo si < 3%
-      sem = val >= 3 ? 'green' : 'red';
-    } else {
-      sem = getSem(val, meta);
-    }
+    let sem = getSemIndicador(ind.id, val, meta);
     const color = getColor(sem);
     const colorInd = COLORES_IND[ind.id] || color;
     const hasDetalle = Object.keys(ind.subVals).length > 1 ||
@@ -776,7 +784,7 @@ function mostrarDetalle(area, id, ind) {
 
   document.getElementById(titleId).textContent = ind.nombre + ' — Detalle';
   const tbody = document.getElementById(bodyId);
-  const meta = SHEETS[area]?.meta || 85;
+  const meta = SHEETS[area]?.meta || 90;
 
   let filas = '';
 
@@ -787,14 +795,7 @@ function mostrarDetalle(area, id, ind) {
 
   if (mostrarSubs) {
     filas += subEntries.map(([sub, val]) => {
-      let sem;
-      if (id === 'PLA-02') {
-        sem = val > 0 ? 'green' : val === 0 ? 'yellow' : 'red';
-      } else if (id === 'CYL-02' || id === 'CYL-03') {
-        sem = val >= 3 ? 'green' : 'red';
-      } else {
-        sem = getSem(val, meta);
-      }
+      const sem = getSemIndicador(id, val, meta);
       const dot = `<div class="semaforo sem-${sem}" style="display:inline-block;margin-right:4px;"></div>`;
       const label = sem === 'green' ? 'Cumple' : sem === 'yellow' ? 'En riesgo' : 'No cumple';
       return `<tr>
@@ -910,7 +911,7 @@ function renderChart(containerId, legendId, indicadores, periodos, requierePatro
   });
 
   // Línea de meta (85%)
-  const metaX = xFor(85);
+  const metaX = xFor(90);
   svg += `<line x1="${metaX}" y1="${padT}" x2="${metaX}" y2="${H-padB}" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.5"/>`;
 
   // Barras agrupadas por indicador
@@ -926,7 +927,7 @@ function renderChart(containerId, legendId, indicadores, periodos, requierePatro
       const x = xFor(v);
       const y = rowY + 4 + pi * (barH + 2);
       const isLast = pi === nPeriodos - 1;
-      const cumple = v >= 85;
+      const cumple = v >= 90;
       const color = isLast
         ? (cumple ? '#0891B2' : '#67C5DB')
         : coloresPeriodo[0];
@@ -1015,7 +1016,7 @@ function renderResumen() {
     panoramaGlobal = desempenoOperativo;
   }
 
-  const desempenoMeta = 85;
+  const desempenoMeta = 90;
   const desempenoSem = getSem(panoramaGlobal, desempenoMeta);
 
   document.getElementById('desempeno-valor').textContent =
@@ -1041,7 +1042,7 @@ function renderResumen() {
     const inds = DATOS[a.key]?.indicadores || [];
     const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
     const promedio = calcularGeneral(a.key, inds, periodoSel);
-    const meta = SHEETS[a.key]?.meta || 85;
+    const meta = SHEETS[a.key]?.meta || 90;
     const sem = getSem(promedio, meta);
     const color = getColor(sem);
     const valStr = promedio !== null ? promedio.toFixed(1) + '%' : '—';
@@ -1063,7 +1064,7 @@ function renderResumen() {
   tendEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
     const promedio = calcularGeneral(a.key, inds, periodoSel) ?? 0;
-    const meta = SHEETS[a.key]?.meta || 85;
+    const meta = SHEETS[a.key]?.meta || 90;
     const sem = getSem(promedio, meta);
     return `<div class="tendencia-row">
       <div class="tend-name" style="color:${a.color};">${a.icon} ${a.label}</div>
@@ -1127,10 +1128,10 @@ async function cargarTodo() {
     });
 
     // Render scorecards
-    renderScorecards('sc-construccion', DATOS.construccion.indicadores, 'Construcción', 85, 'construccion');
-    renderScorecards('sc-planta',       DATOS.planta.indicadores,       'Planta',       85, 'planta');
-    renderScorecards('sc-proyectos',    DATOS.proyectos.indicadores,    'Proyectos',    85, 'proyectos');
-    renderScorecards('sc-compras',      DATOS.compras.indicadores,      'Compras',      85, 'compras');
+    renderScorecards('sc-construccion', DATOS.construccion.indicadores, 'Construcción', 90, 'construccion');
+    renderScorecards('sc-planta',       DATOS.planta.indicadores,       'Planta',       90, 'planta');
+    renderScorecards('sc-proyectos',    DATOS.proyectos.indicadores,    'Proyectos',    90, 'proyectos');
+    renderScorecards('sc-compras',      DATOS.compras.indicadores,      'Compras',      90, 'compras');
 
     // Render charts
     renderMesesSelector('construccion', DATOS.construccion.periodos);
@@ -1241,7 +1242,7 @@ function filtrarPeriodo(area) {
   }
 
   // Re-renderizar scorecards con filtro
-  const meta = SHEETS[area]?.meta || 85;
+  const meta = SHEETS[area]?.meta || 90;
   const inds = DATOS[area]?.indicadores || [];
 
   // Filtrar valores por periodo seleccionado
