@@ -523,9 +523,9 @@ function contribucionIndicador(valor, config) {
   }
   if (config.tipo === 'tramos') {
     // config.tramos: lista ordenada de { hasta, valor }. Se usa el primer
-    // tramo cuyo límite superior ("hasta") sea mayor que el valor real.
+    // tramo cuyo límite superior ("hasta") sea mayor o igual que el valor real.
     for (const tramo of config.tramos) {
-      if (valor < tramo.hasta) return tramo.valor;
+      if (valor <= tramo.hasta) return tramo.valor;
     }
     return config.tramos[config.tramos.length - 1].valor;
   }
