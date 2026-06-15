@@ -219,6 +219,14 @@
 
   <!-- RESUMEN -->
   <div class="page active" id="page-resumen">
+    <div class="periodo-selector" id="selector-resumen">
+      <label>📅 Periodo:</label>
+      <select class="periodo-select" id="select-resumen" onchange="filtrarPeriodo('resumen')">
+        <option value="todos">Más reciente</option>
+      </select>
+      <button class="periodo-all-btn active" id="btn-todos-resumen" onclick="mostrarTodos('resumen')">Más reciente</button>
+      <span class="periodo-info" id="info-resumen"></span>
+    </div>
     <div class="resumen-areas" id="resumen-areas">
       <div class="empty-state"><div class="icon">⏳</div>Cargando áreas...</div>
     </div>
@@ -833,20 +841,23 @@ function renderResumen() {
     { key: 'compras',      label: 'Compras y Logística', icon: '📦', color: 'var(--cyl)', colorBg: 'var(--cyl-bg)', page: 'compras', navIdx: 4 },
   ];
 
+  const periodoSel = periodoSeleccionado.resumen;
+
   const resumenEl = document.getElementById('resumen-areas');
   resumenEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
     const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
     // PLA-02 (rentabilidad) excluida del promedio — se muestra solo como indicador
-    const vals = principales
-      .filter(i => i.id !== 'PLA-02')
-      .map(i => i.valor).filter(v => v !== null && v > 0);
+    const candidatos = principales.filter(i => i.id !== 'PLA-02');
+    const vals = candidatos
+      .map(i => periodoSel === 'todos' ? i.valor : (i.historico[periodoSel] ?? null))
+      .filter(v => v !== null && v > 0);
     const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null;
     const meta = SHEETS[a.key]?.meta || 85;
     const sem = getSem(promedio, meta);
     const color = getColor(sem);
     const valStr = promedio !== null ? promedio.toFixed(1) + '%' : '—';
-    const periodo = inds[0]?.ultimoPeriodo || '';
+    const periodo = periodoSel === 'todos' ? (inds[0]?.ultimoPeriodo || '') : periodoSel;
 
     return `<div class="area-card" onclick="showPage('${a.page}', document.querySelectorAll('.nav-tab')[${a.navIdx}])">
       <div class="area-card-top">
@@ -864,7 +875,9 @@ function renderResumen() {
   tendEl.innerHTML = areas.map(a => {
     const inds = DATOS[a.key]?.indicadores || [];
     const principales = inds.filter(i => /^[A-Z]+-\d+$/.test(i.id));
-    const vals = principales.map(i => i.valor).filter(v => v !== null);
+    const vals = principales
+      .map(i => periodoSel === 'todos' ? i.valor : (i.historico[periodoSel] ?? null))
+      .filter(v => v !== null);
     const promedio = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : 0;
     const meta = SHEETS[a.key]?.meta || 85;
     const sem = getSem(promedio, meta);
@@ -974,7 +987,7 @@ function showPage(pageId, tab) {
 // ═══════════════════════════════════════════════════
 // FILTRO DE PERIODO
 // ═══════════════════════════════════════════════════
-let periodoSeleccionado = { construccion: 'todos', planta: 'todos', proyectos: 'todos', compras: 'todos' };
+let periodoSeleccionado = { construccion: 'todos', planta: 'todos', proyectos: 'todos', compras: 'todos', resumen: 'todos' };
 let mesesHistorico = { construccion: [], planta: [], proyectos: [], compras: [], resumen: [] }; // periodos seleccionados para el gráfico
 
 function llenarSelectores() {
@@ -999,6 +1012,21 @@ function llenarSelectores() {
       filtrarPeriodo(area);
     }
   });
+
+  // Selector de Resumen General — el dropdown permite ver un mes específico,
+  // pero por defecto se queda en "Más reciente" (no se auto-selecciona un periodo)
+  const selResumen = document.getElementById('select-resumen');
+  if (selResumen) {
+    const periodosResumen = DATOS.resumen?.periodos || [];
+    while (selResumen.options.length > 1) selResumen.remove(1);
+    [...periodosResumen].reverse().forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      selResumen.appendChild(opt);
+    });
+    selResumen.value = periodoSeleccionado.resumen;
+  }
 }
 
 function filtrarPeriodo(area) {
@@ -1008,6 +1036,18 @@ function filtrarPeriodo(area) {
 
   const btnTodos = document.getElementById('btn-todos-' + area);
   const info = document.getElementById('info-' + area);
+
+  if (area === 'resumen') {
+    if (periodo === 'todos') {
+      btnTodos.classList.add('active');
+      if (info) info.textContent = 'Mostrando el periodo más reciente';
+    } else {
+      btnTodos.classList.remove('active');
+      if (info) info.textContent = 'Periodo: ' + periodo;
+    }
+    renderResumen();
+    return;
+  }
 
   if (periodo === 'todos') {
     btnTodos.classList.add('active');
