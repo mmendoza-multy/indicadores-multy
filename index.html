@@ -719,7 +719,7 @@ function procesarDatos(rows) {
     };
   });
 
-  return { indicadores, periodos, ultimoPeriodo };
+  return { indicadores, periodos, ultimoPeriodo, _rawPorPeriodo: porPeriodo };
 }
 
 function getSem(valor, meta) {
@@ -769,6 +769,11 @@ function renderScorecards(containerId, indicadores, area, meta, detalleArea) {
     let sem = getSemIndicador(ind.id, val, meta);
     const color = getColor(sem);
     const colorInd = COLORES_IND[ind.id] || color;
+    // Meta a mostrar en la tarjeta (puede diferir de la meta del área)
+    let metaMostrar = meta + '%';
+    if (ind.id === 'CYL-02' || ind.id === 'CYL-03') metaMostrar = '3%';
+    else if (ind.id === 'PLA-02') metaMostrar = 'Rentabilidad positiva';
+    else if (ind.id === 'FIN-02') metaMostrar = '≤80%';
     const hasDetalle = Object.keys(ind.subVals).length > 1 ||
                        (Object.keys(ind.subVals).length === 1 && !Object.keys(ind.subVals).includes('General') && !Object.keys(ind.subVals).includes('')) ||
                        (ind.infoRows && ind.infoRows.length > 0);
@@ -782,7 +787,7 @@ function renderScorecards(containerId, indicadores, area, meta, detalleArea) {
       <div class="scorecard-value" style="color:${color};">${valStr}</div>
       <div class="scorecard-meta">
         <div class="semaforo sem-${sem}"></div>
-        <span>Meta: ${meta}%</span>
+        <span>Meta: ${metaMostrar}</span>
         ${hasDetalle ? '<span style="margin-left:auto;color:var(--blue);font-size:10px;">Ver detalle →</span>' : ''}
       </div>
       <div class="scorecard-bar" style="width:${pct}%;background:${colorInd};"></div>
@@ -1318,11 +1323,19 @@ function filtrarPeriodo(area) {
   const meta = SHEETS[area]?.meta || 90;
   const inds = DATOS[area]?.indicadores || [];
 
-  // Filtrar valores por periodo seleccionado
+  // Filtrar valores por periodo seleccionado — incluyendo subVals del periodo correcto
   const indsFiltrados = inds.map(ind => {
     if (periodo === 'todos') return ind;
     const valPeriodo = ind.historico[periodo];
-    return { ...ind, valor: valPeriodo !== undefined ? Math.round(valPeriodo * 10) / 10 : null };
+    // Reconstruir subVals con los valores del periodo seleccionado desde la hoja de datos
+    const rows = DATOS[area]?._rawPorPeriodo?.[periodo]?.[ind.id] || [];
+    const subValsPeriodo = {};
+    rows.forEach(r => { subValsPeriodo[r.sub] = r.val; });
+    return {
+      ...ind,
+      valor: valPeriodo !== undefined ? Math.round(valPeriodo * 10) / 10 : null,
+      subVals: Object.keys(subValsPeriodo).length > 0 ? subValsPeriodo : ind.subVals,
+    };
   });
 
   const gridId = 'sc-' + area;
