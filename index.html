@@ -301,9 +301,11 @@
       <div class="chart-container" id="chart-construccion"></div>
       <div class="chart-legend" id="legend-construccion"></div>
     </div>
+    <div class="historico-card">
+      <div class="historico-title">📋 Auditoría de Procesos — Construcción</div>
+      <div id="auditoria-construccion"></div>
+    </div>
   </div>
-
-  <!-- PLANTA -->
   <div class="page" id="page-planta">
     <div class="area-header">
       <div><div class="area-title">Planta / Taller</div>
@@ -335,6 +337,10 @@
       <div class="chart-container" id="chart-planta"></div>
       <div class="chart-legend" id="legend-planta"></div>
     </div>
+    <div class="historico-card">
+      <div class="historico-title">📋 Auditoría de Procesos — Planta / Taller</div>
+      <div id="auditoria-planta"></div>
+    </div>
   </div>
 
   <!-- PROYECTOS -->
@@ -357,6 +363,10 @@
       <div class="meses-selector" id="meses-proyectos"></div>
       <div class="chart-container" id="chart-proyectos"></div>
       <div class="chart-legend" id="legend-proyectos"></div>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">📋 Auditoría de Procesos — Proyectos</div>
+      <div id="auditoria-proyectos"></div>
     </div>
   </div>
 
@@ -391,6 +401,10 @@
       <div class="meses-selector" id="meses-compras"></div>
       <div class="chart-container" id="chart-compras"></div>
       <div class="chart-legend" id="legend-compras"></div>
+    </div>
+    <div class="historico-card">
+      <div class="historico-title">📋 Auditoría de Procesos — Compras y Logística</div>
+      <div id="auditoria-compras"></div>
     </div>
   </div>
 </div>
@@ -1096,6 +1110,57 @@ function renderResumen() {
 
 
 // ═══════════════════════════════════════════════════
+// AUDITORÍA DE PROCESOS
+// ═══════════════════════════════════════════════════
+function procesarAuditoria(rows) {
+  // Agrupa por área → periodo → lista de { proceso, valor }
+  const porArea = {};
+  rows.forEach(r => {
+    const proceso = (r['Proceso'] || r['proceso'] || '').trim();
+    const area    = (r['Área'] || r['Area'] || r['área'] || '').trim();
+    let val       = parseFloat((r['Valor_real'] || r['valor_real'] || '0').replace(',', '.'));
+    const periodo = (r['Periodo'] || r['periodo'] || '').trim();
+    if (!proceso || !area || isNaN(val) || !periodo) return;
+    if (val > 0 && val <= 1) val = Math.round(val * 1000) / 10;
+    if (!porArea[area]) porArea[area] = {};
+    if (!porArea[area][periodo]) porArea[area][periodo] = [];
+    porArea[area][periodo].push({ proceso, val });
+  });
+  return porArea;
+}
+
+function renderAuditoria(containerId, areaNombre) {
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  const porArea = DATOS.auditoria || {};
+  const periodosPorArea = porArea[areaNombre] || {};
+  const periodos = Object.keys(periodosPorArea).sort();
+  const ultimoPeriodo = periodos[periodos.length - 1] || null;
+
+  if (!ultimoPeriodo) {
+    cont.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="icon">📋</div>Sin datos de auditoría aún</div>';
+    return;
+  }
+
+  const procesos = periodosPorArea[ultimoPeriodo];
+  const promedio = procesos.reduce((s, p) => s + p.val, 0) / procesos.length;
+
+  cont.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:600;">Auditoría de procesos · ${ultimoPeriodo}</div>
+      <div style="font-size:20px;font-weight:700;color:var(--blue);">${promedio.toFixed(1)}% <span style="font-size:12px;color:var(--text2);font-weight:400;">promedio</span></div>
+    </div>
+    <div class="scorecard-grid">
+      ${procesos.map(p => `
+        <div class="scorecard" style="cursor:default;">
+          <div class="scorecard-name" style="min-height:auto;margin-bottom:8px;">${p.proceso}</div>
+          <div class="scorecard-value" style="font-size:24px;color:var(--blue);">${p.val.toFixed(1)}%</div>
+          <div class="scorecard-bar" style="width:${Math.min(p.val,100)}%;background:var(--blue);"></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
 // CARGA PRINCIPAL
 // ═══════════════════════════════════════════════════
 async function cargarTodo() {
@@ -1103,12 +1168,13 @@ async function cargarTodo() {
   document.getElementById('error-banner').style.display = 'none';
 
   try {
-    const [rowsCon, rowsPla, rowsPry, rowsCyl, rowsFin] = await Promise.all([
+    const [rowsCon, rowsPla, rowsPry, rowsCyl, rowsFin, rowsAud] = await Promise.all([
       fetchSheet(SHEETS.construccion.id, SHEETS.construccion.hoja),
       fetchSheet(SHEETS.planta.id,       SHEETS.planta.hoja),
       fetchSheet(SHEETS.proyectos.id,    SHEETS.proyectos.hoja),
       fetchSheet(SHEETS.compras.id,      SHEETS.compras.hoja),
       SHEETS.financiero.id ? fetchSheet(SHEETS.financiero.id, SHEETS.financiero.hoja) : Promise.resolve([]),
+      SHEETS.financiero.id ? fetchSheet(SHEETS.financiero.id, 'Auditoria').catch(() => []) : Promise.resolve([]),
     ]);
 
     DATOS.construccion = procesarDatos(rowsCon);
@@ -1116,6 +1182,7 @@ async function cargarTodo() {
     DATOS.proyectos    = procesarDatos(rowsPry);
     DATOS.compras      = procesarDatos(rowsCyl);
     DATOS.financiero   = procesarDatos(rowsFin);
+    DATOS.auditoria    = procesarAuditoria(rowsAud);
 
     // Periodo badge
     const periodo = DATOS.construccion.ultimoPeriodo ||
@@ -1147,6 +1214,12 @@ async function cargarTodo() {
     // Resumen
     renderResumen();
     llenarSelectores();
+
+    // Auditoría de procesos
+    renderAuditoria('auditoria-construccion', 'Construcción');
+    renderAuditoria('auditoria-planta',       'Planta');
+    renderAuditoria('auditoria-proyectos',    'Proyectos');
+    renderAuditoria('auditoria-compras',      'Compras y Logística');
 
   } catch (err) {
     console.error(err);
