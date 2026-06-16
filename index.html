@@ -616,6 +616,29 @@ function parseCSV(text) {
 // ═══════════════════════════════════════════════════
 // PROCESAMIENTO DE DATOS
 // ═══════════════════════════════════════════════════
+
+// Normaliza cualquier formato de periodo a "YYYY-MM"
+// Soporta: "2026-05", "2026-05-31", "1/5/2026", "5/1/2026", "mayo de 2026", etc.
+function normalizarPeriodo(val) {
+  if (!val) return '';
+  const s = String(val).trim();
+  // Ya es YYYY-MM
+  const m1 = s.match(/^(\d{4})-(\d{2})/);
+  if (m1) return m1[1] + '-' + m1[2];
+  // Formato D/M/YYYY o M/D/YYYY — asumimos D/M/YYYY (formato español de Sheets)
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m2) {
+    const day = parseInt(m2[1]), month = parseInt(m2[2]), year = parseInt(m2[3]);
+    // Si el primer número > 12, es día; si no, asumimos D/M
+    const mes = day > 12 ? month : (month > 12 ? day : month);
+    return year + '-' + String(mes).padStart(2, '0');
+  }
+  // Formato YYYY/MM/DD
+  const m3 = s.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (m3) return m3[1] + '-' + m3[2];
+  return s;
+}
+
 function procesarDatos(rows) {
   // Agrupar por ID_indicador → último valor por periodo más reciente
   const porId = {};
@@ -628,7 +651,7 @@ function procesarDatos(rows) {
     const area = r['Área'] || r['Area'] || '';
     const sub = r['Sub_equipo'] || '';
     let val = parseFloat((r['Valor_real'] || '0').replace(',','.'));
-    const periodo = r['Periodo'] || '';
+    const periodo = normalizarPeriodo(r['Periodo'] || '');
     const fecha = r['Fecha'] || '';
     if (!id || isNaN(val)) return;
 
@@ -641,8 +664,8 @@ function procesarDatos(rows) {
       return;
     }
 
-    // Convertir decimales a porcentaje (0.97 → 97) — solo indicadores normales
-    if (val > 0 && val <= 2) val = Math.round(val * 1000) / 10;
+    // Convertir decimales a porcentaje (0.97 → 97) — solo si es decimal puro (0 < val <= 1)
+    if (val > 0 && val <= 1) val = Math.round(val * 1000) / 10;
 
     if (!porId[id]) porId[id] = { id, nombre, area, subequipos: {}, periodos: {} };
     if (!porId[id].subequipos[sub]) porId[id].subequipos[sub] = [];
@@ -1124,7 +1147,7 @@ function procesarAuditoria(rows) {
     const proceso = (r['Proceso'] || r['proceso'] || '').trim();
     const area    = (r['Área'] || r['Area'] || r['área'] || '').trim();
     let val       = parseFloat((r['Valor_real'] || r['valor_real'] || '0').replace(',', '.'));
-    const periodo = (r['Periodo'] || r['periodo'] || '').trim();
+    const periodo = normalizarPeriodo(r['Periodo'] || r['periodo'] || '');
     if (!proceso || !area || isNaN(val) || !periodo) return;
     if (val > 0 && val <= 1) val = Math.round(val * 1000) / 10;
     if (!porArea[area]) porArea[area] = {};
